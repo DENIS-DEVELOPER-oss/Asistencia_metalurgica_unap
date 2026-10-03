@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <div>
+    <a href="{% url 'cursos' %}" class="volver">← Mis cursos</a>
+    <h1>Historial de clases</h1>
+    <p>{{ grupo.curso.codigo }} · {{ grupo.nombre }} — {{ grupo.curso.nombre }}</p>
+  </div>
+  <div class="derecha">
+    {% if es_titular %}
+      <a href="{% url 'asistencia' grupo.id_grupo %}" class="boton boton-primario">Llamar asistencia</a>
+    {% endif %}
+    <a href="{% url 'reporte' grupo.id_grupo %}" class="boton boton-claro">Reporte</a>
+    <a href="{% url 'matriculados' grupo.id_grupo %}" class="boton boton-claro">Matriculados</a>
+  </div>
+</div>
+
+<div class="rejilla tres" style="margin-bottom:18px">
+  <div class="indicador">
+    <span class="icono fondo-marino">{{ filas|length }}</span>
+    <div><div class="valor">{{ filas|length }}</div><div class="etiqueta">Clases dictadas</div></div>
+  </div>
+  <div class="indicador">
+    <span class="icono fondo-presente">✓</span>
+    <div><div class="valor">{{ cerradas }}</div><div class="etiqueta">Cerradas</div></div>
+  </div>
+  <div class="indicador">
+    <span class="icono fondo-ambar">●</span>
+    <div><div class="valor">{{ abiertas }}</div><div class="etiqueta">Abiertas</div></div>
+  </div>
+</div>
+
+<div class="tarjeta">
+  <div class="tarjeta-cabecera">
+    <h2>Clases registradas</h2>
+  </div>
+
+  {% if filas %}
+    <div class="tabla-envoltorio">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Tema</th>
+            <th class="centro">P</th>
+            <th class="centro">F</th>
+            <th class="centro">Asistencia</th>
+            <th class="centro">Estado</th>
+            <th class="centro">Acciones</th>
+            <th class="centro">Descargar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in filas %}
+            <tr>
+              <td><strong>{{ f.sesion.fecha|date:"d/m/Y" }}</strong></td>
+              <td class="mono">
+                {{ f.sesion.hora_inicio|time:"H:i" }}{% if f.sesion.hora_fin %}–{{ f.sesion.hora_fin|time:"H:i" }}{% endif %}
+              </td>
+              <td>{{ f.sesion.tema|default:"Sin tema registrado" }}</td>
+              <td class="centro verde"><strong>{{ f.resumen.presentes }}</strong></td>
+              <td class="centro rojo"><strong>{{ f.resumen.faltas }}</strong></td>
+              <td class="centro">
+                {% if f.resumen.porcentaje is not None %}{{ f.resumen.porcentaje }}%{% else %}—{% endif %}
+              </td>
+              <td class="centro">
+                {% if f.sesion.estado == 'CERRADA' %}
+                  <span class="insignia ins-gris">Cerrada</span>
+                {% else %}
+                  <span class="insignia ins-verde">Abierta</span>
+                {% endif %}
+              </td>
+              <td class="centro">
+                <a href="{% url 'sesion' f.sesion.id_sesion %}" class="boton boton-claro boton-chico">
+                  {% if f.sesion.estado == 'CERRADA' %}Ver{% else %}Continuar{% endif %}
+                </a>
+              </td>
+              <td class="centro">
+                <div class="pila" style="justify-content:center;flex-wrap:nowrap;gap:4px">
+                  <a href="{% url 'exportar-sesion' f.sesion.id_sesion 'excel' %}" class="boton boton-claro boton-chico" title="Excel de esta clase">XLS</a>
+                  <a href="{% url 'exportar-sesion' f.sesion.id_sesion 'word' %}" class="boton boton-claro boton-chico" title="Word de esta clase">DOC</a>
+                  <a href="{% url 'exportar-sesion' f.sesion.id_sesion 'pdf' %}" class="boton boton-claro boton-chico" title="PDF de esta clase">PDF</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="vacio">
+      <div class="icono">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+      </div>
+      <h3>Todavía no hay clases registradas</h3>
+      {% if es_titular %}
+        <p>Cuando llames asistencia por primera vez, la clase aparecerá aquí.</p>
+        <a href="{% url 'asistencia' grupo.id_grupo %}" class="boton boton-primario">Iniciar la primera clase</a>
+      {% else %}
+        <p>
+          Las clases las registra <strong>{{ grupo.docente.nombre_completo }}</strong>,
+          el docente asignado a este grupo.
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

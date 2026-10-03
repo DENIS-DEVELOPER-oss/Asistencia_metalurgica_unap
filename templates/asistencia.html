@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <div>
+    <a href="{% url 'cursos' %}" class="volver">← Mis cursos</a>
+    <h1>{{ grupo.curso.codigo }} · {{ grupo.nombre }}</h1>
+    <p>
+      {{ sesion.fecha|date:"d/m/Y" }} ·
+      {{ sesion.hora_inicio|time:"H:i" }}{% if sesion.hora_fin %} – {{ sesion.hora_fin|time:"H:i" }}{% endif %}
+      {% if sesion.esta_abierta %}
+        <span class="insignia ins-verde">● En curso</span>
+      {% else %}
+        <span class="insignia ins-gris">Cerrada</span>
+      {% endif %}
+      {% if not es_titular %}
+        <span class="insignia ins-gris">Solo lectura</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="derecha">
+    <a href="{% url 'historial' grupo.id_grupo %}" class="boton boton-claro boton-chico">Historial</a>
+    <span class="grupo-descargas" role="group" aria-label="Descargar esta clase">
+      <span class="etiqueta-grupo">Esta clase</span>
+      <a href="{% url 'exportar-sesion' sesion.id_sesion 'excel' %}">Excel</a>
+      <a href="{% url 'exportar-sesion' sesion.id_sesion 'word' %}">Word</a>
+      <a href="{% url 'exportar-sesion' sesion.id_sesion 'pdf' %}">PDF</a>
+    </span>
+  </div>
+</div>
+
+{% if not es_titular %}
+  <div class="mensaje info" style="margin-bottom:16px">
+    Esta lista la registra <strong>{{ grupo.docente.nombre_completo }}</strong>,
+    el docente asignado al grupo. Aquí puedes consultarla y descargarla, pero
+    no modificarla.
+  </div>
+{% endif %}
+
+<form method="post" id="form-asistencia">
+  {% csrf_token %}
+
+  <!-- Tema -->
+  <div class="tarjeta" style="margin-bottom:16px">
+    <div class="tarjeta-cuerpo">
+      <label class="etiqueta" for="tema">Tema de la clase</label>
+      <input class="campo" type="text" id="tema" name="tema" maxlength="255"
+             value="{{ sesion.tema|default:'' }}"
+             {% if solo_lectura %}disabled{% endif %}>
+    </div>
+  </div>
+
+  <!-- Contadores en vivo -->
+  <div class="rejilla dos" style="margin-bottom:14px">
+    <div class="indicador">
+      <span class="icono fondo-presente">P</span>
+      <div><div class="valor" id="cuenta-PRESENTE">0</div><div class="etiqueta">Presentes</div></div>
+    </div>
+    <div class="indicador">
+      <span class="icono fondo-falta">F</span>
+      <div><div class="valor" id="cuenta-FALTA">0</div><div class="etiqueta">Faltas</div></div>
+    </div>
+  </div>
+
+  <p class="nota texto-centro" style="margin:0 0 14px">
+    Asistencia de hoy: <strong id="cuenta-asistio">0</strong> de {{ alumnos|length }}
+    (<span id="cuenta-porcentaje">0%</span>)
+  </p>
+
+  <!-- Herramientas -->
+  <div class="pila" style="margin-bottom:14px">
+    <div class="campo-grupo" style="flex:1;min-width:190px;margin:0">
+      <label class="etiqueta" for="buscador-alumno">Buscar un alumno</label>
+      <input class="campo" type="search" id="buscador-alumno" autocomplete="off">
+    </div>
+    {% if not solo_lectura %}
+      <button type="button" class="boton boton-claro btn-todos" id="btn-todos-presentes">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 12 5 5L17 7"/><path d="m14 15 3 3 5-9"/></svg>
+        Marcar todos presentes
+      </button>
+    {% endif %}
+  </div>
+
+  <!-- Lista de alumnos -->
+  <div id="lista-alumnos" class="lista-asistencia">
+    {% for a in alumnos %}
+      <article class="alumno es-{{ a.estado|lower }}"
+               data-busqueda="{{ a.nombre|lower }} {{ a.codigo }}"
+               data-id="{{ a.id_matricula }}">
+        <div class="fila-superior">
+          <span class="orden">{{ a.numero }}</span>
+          <div style="flex:1;min-width:0">
+            <div class="nombre">{{ a.nombre }}</div>
+            <div class="datos"><span class="mono">{{ a.codigo }}</span></div>
+          </div>
+        </div>
+
+        <div class="selector-estado">
+          {% for e in estados %}
+            <input type="radio"
+                   id="m{{ a.id_matricula }}-{{ e.valor }}"
+                   name="estado_{{ a.id_matricula }}"
+                   value="{{ e.valor }}"
+                   {% if a.estado == e.valor %}checked{% endif %}
+                   {% if solo_lectura %}disabled{% endif %}>
+            <label for="m{{ a.id_matricula }}-{{ e.valor }}" class="op-{{ e.clase }}" title="{{ e.nombre }}">
+              {{ e.letra }}<small>{{ e.nombre }}</small>
+            </label>
+          {% endfor %}
+        </div>
+
+        {% if not solo_lectura %}
+          <button type="button" class="boton-icono btn-observacion"
+                  title="Agregar observación" aria-label="Observación de {{ a.nombre }}">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 8v5M9.5 10.5h5"/></svg>
+          </button>
+        {% endif %}
+
+        <textarea class="campo caja-observacion" name="obs_{{ a.id_matricula }}" rows="2" maxlength="255"
+                  aria-label="Observación sobre {{ a.nombre }}"
+                  {% if solo_lectura %}disabled{% endif %}
+                  {% if not a.observacion %}hidden{% endif %}>{{ a.observacion }}</textarea>
+      </article>
+    {% empty %}
+      <div class="tarjeta"><div class="vacio"><p>Esta sesión no tiene alumnos en la lista.</p></div></div>
+    {% endfor %}
+  </div>
+
+  <p class="nota texto-centro oculto" id="sin-resultados" style="padding:24px">
+    Ningún alumno coincide con la búsqueda.
+  </p>
+
+  <!-- Barra de acciones -->
+  <div class="barra-fija">
+    {% if solo_lectura %}
+      <div class="resumen-vivo" aria-hidden="true">
+        <span class="punto p"><b id="barra-PRESENTE">0</b>P</span>
+        <span class="punto f"><b id="barra-FALTA">0</b>F</span>
+      </div>
+      <span class="nota">
+        {% if not sesion.esta_abierta %}
+          <strong>Clase cerrada</strong> · solo lectura
+        {% else %}
+          <strong>Clase en curso</strong> · la registra {{ grupo.docente.nombre_completo }}
+        {% endif %}
+      </span>
+      <div class="derecha">
+            <span class="grupo-descargas" role="group" aria-label="Descargar esta clase">
+              <span class="etiqueta-grupo">Esta clase</span>
+          <a href="{% url 'exportar-sesion' sesion.id_sesion 'excel' %}">Excel</a>
+          <a href="{% url 'exportar-sesion' sesion.id_sesion 'word' %}">Word</a>
+          <a href="{% url 'exportar-sesion' sesion.id_sesion 'pdf' %}">PDF</a>
+        </span>
+        <a href="{% url 'reporte' grupo.id_grupo %}" class="boton boton-primario">Ver reporte</a>
+      </div>
+    {% else %}
+      <div class="resumen-vivo" aria-hidden="true">
+        <span class="punto p"><b id="barra-PRESENTE">0</b>P</span>
+        <span class="punto f"><b id="barra-FALTA">0</b>F</span>
+      </div>
+      <span class="nota" id="aviso-cambios">Los cambios se guardan al pulsar «Guardar»</span>
+      <div class="derecha">
+        <button type="submit" name="accion" value="guardar" class="boton boton-primario">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+          Guardar asistencia
+        </button>
+        <button type="submit" name="accion" value="guardar_y_cerrar" class="boton boton-peligro"
+                id="btn-cerrar">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Guardar y cerrar clase
+        </button>
+      </div>
+    {% endif %}
+  </div>
+</form>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var form = document.getElementById('form-asistencia');
+  var lista = document.getElementById('lista-alumnos');
+  var soloLectura = {% if solo_lectura %}true{% else %}false{% endif %};
+  var total = {{ alumnos|length }};
+  var sucio = false;
+
+  // -------------------------------------------------- contadores en vivo
+  function recontar() {
+    var cuenta = { PRESENTE: 0, FALTA: 0 };
+    lista.querySelectorAll('input[type=radio]:checked').forEach(function (r) {
+      if (cuenta[r.value] !== undefined) cuenta[r.value]++;
+    });
+    Object.keys(cuenta).forEach(function (k) {
+      document.getElementById('cuenta-' + k).textContent = cuenta[k];
+      // El mismo recuento en la barra fija, que no se va con el scroll.
+      var enBarra = document.getElementById('barra-' + k);
+      if (enBarra) enBarra.textContent = cuenta[k];
+    });
+    var asistio = cuenta.PRESENTE;
+    document.getElementById('cuenta-asistio').textContent = asistio;
+    document.getElementById('cuenta-porcentaje').textContent =
+      total ? (100 * asistio / total).toFixed(1) + '%' : '—';
+  }
+
+  // Colorea el borde izquierdo de la fila según el estado elegido.
+  function pintarFila(fila, valor) {
+    fila.className = 'alumno es-' + valor.toLowerCase();
+  }
+
+  lista.addEventListener('change', function (e) {
+    if (e.target.type === 'radio') {
+      pintarFila(e.target.closest('.alumno'), e.target.value);
+      recontar();
+      marcarSucio();
+    }
+  });
+  lista.addEventListener('input', function (e) {
+    if (e.target.tagName === 'TEXTAREA') marcarSucio();
+  });
+  document.getElementById('tema').addEventListener('input', marcarSucio);
+
+  function marcarSucio() {
+    if (soloLectura || sucio) return;
+    sucio = true;
+    var aviso = document.getElementById('aviso-cambios');
+    if (aviso) {
+      aviso.innerHTML = '<strong style="color:var(--ambar)">Hay cambios sin guardar</strong>';
+    }
+  }
+
+  // --------------------------------------------- marcar todos presentes
+  var btnTodos = document.getElementById('btn-todos-presentes');
+  if (btnTodos) {
+    btnTodos.addEventListener('click', function () {
+      lista.querySelectorAll('.alumno').forEach(function (fila) {
+        var radio = fila.querySelector('input[value=PRESENTE]');
+        if (radio && !radio.checked) { radio.checked = true; pintarFila(fila, 'PRESENTE'); }
+      });
+      recontar();
+      marcarSucio();
+    });
+  }
+
+  // ------------------------------------------------------- observaciones
+  lista.querySelectorAll('.btn-observacion').forEach(function (boton) {
+    boton.addEventListener('click', function () {
+      var caja = boton.closest('.alumno').querySelector('.caja-observacion');
+      caja.hidden = !caja.hidden;
+      if (!caja.hidden) caja.focus();
+    });
+  });
+
+  // ------------------------------------------------------------ buscador
+  var buscador = document.getElementById('buscador-alumno');
+  var sinResultados = document.getElementById('sin-resultados');
+  buscador.addEventListener('input', function () {
+    var q = buscador.value
+      .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+      .toLowerCase().trim();
+    var visibles = 0;
+    lista.querySelectorAll('.alumno').forEach(function (fila) {
+      var texto = fila.dataset.busqueda
+        .normalize('NFD').replace(/\p{Diacritic}/gu, '');
+      var coincide = !q || texto.indexOf(q) !== -1;
+      fila.hidden = !coincide;
+      if (coincide) visibles++;
+    });
+    sinResultados.classList.toggle('oculto', visibles > 0);
+  });
+
+  // ------------------------------------------- confirmación y aviso salida
+  var btnCerrar = document.getElementById('btn-cerrar');
+  if (btnCerrar) {
+    btnCerrar.addEventListener('click', function (e) {
+      var p = document.getElementById('cuenta-PRESENTE').textContent;
+      var f = document.getElementById('cuenta-FALTA').textContent;
+      var ok = confirm(
+        'Se guardarán ' + p + ' presentes y ' + f + ' faltas.\n\n' +
+        'Después de cerrar la clase ya no podrás modificar la asistencia. ¿Continuar?'
+      );
+      if (!ok) e.preventDefault();
+    });
+  }
+
+  form.addEventListener('submit', function () { sucio = false; });
+  window.addEventListener('beforeunload', function (e) {
+    if (sucio) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  recontar();
+})();
+</script>
+{% endblock %}

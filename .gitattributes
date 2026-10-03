@@ -1,0 +1,14 @@
+# Normaliza los finales de línea. `eol=lf` en la regla general hace que el
+# repositorio mande sobre la configuración de cada máquina: sin él, Git usa
+# core.autocrlf del equipo y el mismo archivo queda distinto en cada uno,
+# lo que produce diferencias enteras al cambiar de computadora.
+* text=auto eol=lf
+
+# Los .bat los ejecuta cmd.exe, que espera finales de Windows.
+*.bat   text eol=crlf
+
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.xlsx  binary
+*.docx  binary

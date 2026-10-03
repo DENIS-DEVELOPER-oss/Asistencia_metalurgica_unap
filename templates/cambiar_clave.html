@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <div>
+    {% if not clave_pendiente %}
+      <a href="{% url 'cursos' %}" class="volver">← Volver</a>
+    {% endif %}
+    <h1>Mi cuenta</h1>
+    <p>{{ user.nombre_completo }} · {{ user.get_rol_display }}</p>
+  </div>
+</div>
+
+{% if clave_pendiente %}
+  {% comment %}
+    Sin el «volver» de arriba y con el aviso aquí, la pantalla dice por sí
+    sola por qué no se puede ir a otra parte. Antes de esto, el redirigido
+    habría pensado que el sistema estaba roto.
+  {% endcomment %}
+  <div class="mensaje warning" role="alert" style="max-width:820px;margin-bottom:18px">
+    <strong>Elige tu contraseña para continuar.</strong><br>
+    La que usaste para entrar la puso el administrador, así que la conocen
+    dos personas. La asistencia que registres queda firmada a tu nombre:
+    conviene que solo tú puedas entrar con tu cuenta.
+  </div>
+{% endif %}
+
+<div class="rejilla dos" style="max-width:820px">
+
+  {# El nombre de usuario. Para el administrador este es el unico sitio
+     donde puede cambiarlo: no tiene ficha de docente. #}
+  <div class="tarjeta">
+    <div class="tarjeta-cabecera"><h2>Nombre de usuario</h2></div>
+
+    <form method="post" class="tarjeta-cuerpo">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="usuario">
+
+      <div class="campo-grupo">
+        <label class="etiqueta" for="username">Con qué usuario entras</label>
+        <input class="campo" type="text" id="username" name="username"
+               value="{{ user.username }}" autocapitalize="none" spellcheck="false"
+               maxlength="50" required>
+        <p class="nota" style="margin:6px 0 0">
+          Puede ser un correo, un DNI o un nombre corto.
+        </p>
+      </div>
+
+      <div class="campo-grupo">
+        <label class="etiqueta" for="password_confirma">Tu contraseña actual</label>
+        <input class="campo" type="password" id="password_confirma" name="password_confirma"
+               autocomplete="current-password" required>
+        <p class="nota" style="margin:6px 0 0">
+          Se pide para que nadie pueda quedarse con tu cuenta si dejas la
+          sesión abierta.
+        </p>
+      </div>
+
+      <button type="submit" class="boton boton-claro boton-ancho">
+        Guardar usuario
+      </button>
+    </form>
+  </div>
+
+  {# La contraseña. #}
+  <div class="tarjeta">
+    <div class="tarjeta-cabecera"><h2>Contraseña</h2></div>
+
+    <form method="post" class="tarjeta-cuerpo">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="clave">
+
+      <div class="campo-grupo">
+        <label class="etiqueta" for="password_actual">Contraseña actual</label>
+        <input class="campo" type="password" id="password_actual" name="password_actual"
+               autocomplete="current-password" required>
+      </div>
+
+      <div class="campo-grupo">
+        <label class="etiqueta" for="password_nueva">Contraseña nueva</label>
+        <input class="campo" type="password" id="password_nueva" name="password_nueva"
+               autocomplete="new-password" {% if clave_pendiente %}autofocus{% endif %} required>
+        <p class="nota" style="margin:6px 0 0">
+          Mínimo 8 caracteres. Que no sea tu DNI ni tu fecha de nacimiento:
+          son los dos primeros datos que prueba quien quiere entrar en tu
+          nombre.
+        </p>
+      </div>
+
+      <button type="submit" class="boton boton-primario boton-ancho">
+        Guardar contraseña
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

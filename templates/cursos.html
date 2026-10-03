@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% load l10n %}
+
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <div>
+    <h1>{% if user.es_admin %}Todos los grupos{% else %}Mis cursos{% endif %}</h1>
+    <p>
+      {% if user.es_admin %}
+        Administras {{ total_grupos }} grupo{{ total_grupos|pluralize }} de toda la escuela.
+        Llamar asistencia le corresponde a cada docente.
+      {% else %}
+        {{ user.nombre_completo }}
+      {% endif %}
+    </p>
+  </div>
+  <div class="derecha">
+    {% if tarjetas %}
+      <a href="{% url 'exportar-consolidado' %}" class="boton boton-claro">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 13 6 6M15 13l-6 6"/></svg>
+        {% if user.es_admin %}Excel de todos los grupos{% else %}Excel de todos mis cursos{% endif %}
+      </a>
+    {% endif %}
+    {% if user.es_admin %}
+      <a href="{% url 'admin-panel' %}#cursos" class="boton boton-primario">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Gestionar cursos
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Resumen general -->
+<div class="rejilla tres" style="margin-bottom:18px">
+  <div class="indicador">
+    <span class="icono fondo-marino" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    </span>
+    <div>
+      <div class="valor">{{ total_grupos }}</div>
+      <div class="etiqueta">Grupos</div>
+    </div>
+  </div>
+  <div class="indicador">
+    <span class="icono fondo-dorado" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/></svg>
+    </span>
+    <div>
+      <div class="valor">{{ total_alumnos }}</div>
+      <div class="etiqueta">Alumnos</div>
+    </div>
+  </div>
+  <div class="indicador">
+    <span class="icono fondo-presente" aria-hidden="true">%</span>
+    <div>
+      <div class="valor">{% if promedio_general %}{{ promedio_general }}%{% else %}—{% endif %}</div>
+      <div class="etiqueta">Asistencia promedio</div>
+    </div>
+  </div>
+</div>
+
+{% if panel_docentes %}
+  <!-- Docentes: cada botón filtra los cursos de abajo -->
+  <div class="tarjeta" style="margin-bottom:18px">
+    <div class="tarjeta-cabecera">
+      <h2>Docentes</h2>
+      <div class="derecha">
+        <span class="nota">Pulsa un docente para ver sus cursos</span>
+      </div>
+    </div>
+
+    <div class="tarjeta-cuerpo">
+      <div class="lista-docentes">
+        {# Quitar el filtro, no un docente más: por eso va aparte. #}
+        <a href="{% url 'cursos' %}"
+           class="chip-docente chip-todos{% if not docente_elegido %} elegido{% endif %}">
+          <span class="avatar-chip" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg>
+          </span>
+          <span class="datos">
+            <strong>Todos los docentes</strong>
+            <small>{{ panel_docentes|length }} en total</small>
+          </span>
+          <span class="cuenta-chip">{{ total_de_todos }}</span>
+        </a>
+
+        {% for d in panel_docentes %}
+          <a href="{% url 'cursos' %}?docente={{ d.obj.id_docente }}"
+             class="chip-docente{% if d.elegido %} elegido{% endif %}{% if not d.n_grupos %} sin-grupos{% endif %}"
+             title="{{ d.obj.nombre_completo }}{% if not d.n_grupos %} — sin cursos asignados{% endif %}">
+            <span class="avatar-chip" aria-hidden="true">{{ d.obj.apellidos|slice:":1" }}{{ d.obj.nombres|slice:":1" }}</span>
+            <span class="datos">
+              {# El apellido es lo que identifica; los nombres, debajo. #}
+              <strong>{{ d.obj.apellidos }}</strong>
+              <small>
+                {{ d.obj.nombres|title }}{% if not d.obj.activo %} · inactivo{% endif %}
+              </small>
+            </span>
+            <span class="cuenta-chip" title="{{ d.n_grupos }} curso{{ d.n_grupos|pluralize }}">
+              {{ d.n_grupos }}
+            </span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="tarjeta-pie">
+      <p class="nota sin-margen">
+        El número es la cantidad de cursos que dicta cada uno.
+        Para crear un curso o cambiar quién lo dicta, entra en
+        <a href="{% url 'admin-panel' %}#cursos">Administración → Cursos</a>.
+      </p>
+    </div>
+  </div>
+{% endif %}
+
+{% if docente_elegido %}
+  <p class="nota" style="margin-bottom:12px">
+    Mostrando los cursos de <strong>{{ docente_elegido.nombre_completo }}</strong> —
+    <a href="{% url 'cursos' %}">ver todos los grupos</a>
+  </p>
+{% endif %}
+
+{% if tarjetas %}
+  <div class="rejilla cursos">
+    {% for t in tarjetas %}
+      <article class="tarjeta">
+        <div class="tarjeta-cabecera">
+          <div>
+            <div class="pila" style="margin-bottom:5px">
+              <span class="insignia ins-marino">{{ t.grupo.curso.codigo }}</span>
+              <span class="insignia ins-dorado">{{ t.grupo.nombre }}</span>
+              <span class="insignia ins-gris">{{ t.grupo.periodo.codigo }}</span>
+              {% if t.sesion_abierta %}
+                <span class="insignia ins-verde">● En curso</span>
+              {% endif %}
+            </div>
+            <h2>{{ t.grupo.curso.nombre }}</h2>
+            <p class="nota" style="margin:3px 0 0">
+              {{ t.grupo.curso.semestre_texto }} · {{ t.grupo.curso.creditos }} créditos ·
+              {{ t.grupo.curso.escuela.nombre }}
+            </p>
+            {% if not t.es_titular %}
+              {# Quien no dicta el grupo necesita saber quién lo hace. #}
+              <p class="nota docente-del-grupo" style="margin:5px 0 0">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                {{ t.grupo.docente.nombre_completo }}
+              </p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tarjeta-cuerpo">
+          <div class="rejilla cuatro" style="margin-bottom:14px">
+            <div>
+              <div class="etiqueta" style="font-size:10.5px;text-transform:uppercase;color:var(--texto-tenue)">Alumnos</div>
+              <strong>{{ t.total_alumnos }}</strong>
+            </div>
+            <div>
+              <div class="etiqueta" style="font-size:10.5px;text-transform:uppercase;color:var(--texto-tenue)">Clases</div>
+              <strong>{{ t.total_sesiones }}</strong>
+            </div>
+          </div>
+
+          <div class="etiqueta" style="font-size:10.5px;text-transform:uppercase;color:var(--texto-tenue);margin-bottom:5px">
+            Asistencia promedio
+          </div>
+          <div class="barra">
+            <div class="riel">
+              <div class="relleno fondo-{% if t.semaforo == 'verde' %}presente{% elif t.semaforo == 'ambar' %}ambar{% elif t.semaforo == 'rojo' %}falta{% else %}gris{% endif %}"
+                   style="width:{{ t.porcentaje_promedio|default:0|unlocalize }}%"></div>
+            </div>
+            <span class="cifra {{ t.semaforo }}">
+              {% if t.porcentaje_promedio %}{{ t.porcentaje_promedio }}%{% else %}—{% endif %}
+            </span>
+          </div>
+
+          <p class="nota" style="margin:12px 0 0">
+            {% if t.ultima_clase %}
+              Última clase: {{ t.ultima_clase.fecha|date:"d/m/Y" }} ·
+              {{ t.ultima_clase.hora_inicio|time:"H:i" }}
+              {% if t.ultima_clase.tema %} — {{ t.ultima_clase.tema }}{% endif %}
+            {% else %}
+              Aún no se ha llamado asistencia en este grupo
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="tarjeta-pie">
+          {% if t.es_titular %}
+            {# Es su curso: lo que viene a hacer es llamar lista. #}
+            <a href="{% url 'asistencia' t.grupo.id_grupo %}"
+               class="boton {% if t.sesion_abierta %}boton-continuar{% else %}boton-primario{% endif %} boton-ancho">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></svg>
+              {% if t.sesion_abierta %}Continuar la clase en curso{% else %}Llamar asistencia{% endif %}
+            </a>
+          {% else %}
+            {# No lo dicta: su trabajo aquí es consultar y administrar. #}
+            <a href="{% url 'reporte' t.grupo.id_grupo %}" class="boton boton-primario boton-ancho">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+              Ver reporte de asistencia
+            </a>
+          {% endif %}
+          <div class="pila" style="width:100%">
+            <a href="{% url 'historial' t.grupo.id_grupo %}" class="boton boton-claro" style="flex:1">Historial</a>
+            {% if t.es_titular %}
+              <a href="{% url 'reporte' t.grupo.id_grupo %}" class="boton boton-claro" style="flex:1">Reporte</a>
+            {% else %}
+              <a href="{% url 'matriculados' t.grupo.id_grupo %}" class="boton boton-claro" style="flex:1">Estudiantes</a>
+            {% endif %}
+          </div>
+          <div class="pila" style="width:100%">
+            {% if t.es_titular %}
+              <a href="{% url 'matriculados' t.grupo.id_grupo %}" class="boton boton-claro boton-chico" style="flex:1">
+                Estudiantes
+              </a>
+            {% endif %}
+            {% if user.es_admin %}
+              <a href="{% url 'admin-panel' %}#cursos" class="boton boton-claro boton-chico" style="flex:1">
+                Gestionar
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="tarjeta">
+    <div class="vacio">
+      <div class="icono">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <h3>
+        {% if docente_elegido %}Sin cursos asignados
+        {% elif user.es_admin %}Todavía no hay cursos registrados
+        {% else %}Todavía no tienes grupos asignados{% endif %}
+      </h3>
+      <p>
+        {% if docente_elegido %}
+          A {{ docente_elegido.nombre_completo }} todavía no se le ha asignado
+          ningún curso. Créale uno con «Nuevo curso», o asígnale uno existente
+          desde Administración.
+        {% elif user.es_admin %}
+          Empieza por registrar un periodo académico en «Administración» y
+          después crea el primer curso con «Nuevo curso».
+        {% else %}
+          Cuando la escuela profesional te asigne un grupo, aparecerá aquí para que puedas
+          llamar asistencia.
+        {% endif %}
+      </p>
+      {% if docente_elegido %}
+        <a href="{% url 'cursos' %}" class="boton boton-primario">Ver todos los grupos</a>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}

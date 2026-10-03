@@ -1,0 +1,1049 @@
+/* =====================================================================
+   Sistema de Control de Asistencia — UNAP
+   Hoja de estilos única. Sin frameworks ni compilación.
+   ===================================================================== */
+
+:root {
+  /* Marca: el marino y el dorado de la universidad. Mas profundos y menos
+     saturados que antes; el contraste de cada pareja esta comprobado. */
+  --marino: #14305c;
+  --indigo: #2b5cc4;
+  --indigo-hover: #24509f;
+  --dorado: #b8860f;
+
+  /* Estado de la asistencia y semaforo. */
+  --presente: #15803d;
+  --ambar: #b45309;
+  --falta: #b91c1c;
+
+  --fondo: #f4f6fa;
+  --tarjeta: #ffffff;
+  --borde: #e1e7f0;
+  --borde-suave: #eef2f7;
+  --texto: #1a2333;
+  --texto-tenue: #5f6b7f;
+  --franja: #f8fafc;
+
+  /* Fondos tenues de cada color, para insignias, celdas y avisos. */
+  --tinte-presente: rgba(21, 128, 61, 0.10);
+  --tinte-falta:    rgba(185, 28, 28, 0.09);
+  --tinte-ambar:    rgba(180, 83, 9, 0.11);
+  --tinte-indigo:   rgba(43, 92, 196, 0.09);
+  --tinte-dorado:   rgba(184, 134, 15, 0.14);
+  --tinte-marino:   rgba(20, 48, 92, 0.10);
+  --presente-fuerte: #116632;
+  --dorado-claro: #f0c14b;
+  --marino-claro: #1f4585;
+  --marino-texto: #14305c;
+
+  --sombra: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 14px rgba(16, 24, 40, 0.05);
+  --sombra-alta: 0 10px 34px rgba(16, 24, 40, 0.16);
+  --radio: 10px;
+  --lateral: 218px;
+}
+
+:root[data-tema='oscuro'] {
+  --fondo: #0d1524;
+  --tarjeta: #162034;
+  --borde: #2a3750;
+  --borde-suave: #222e45;
+  --texto: #e7edf6;
+  --texto-tenue: #95a3b8;
+  --franja: #1c2740;
+
+  /* Los colores de estado se aclaran: los del tema claro se perdian
+     sobre un fondo oscuro. */
+  --indigo: #7b9cf0;
+  --indigo-hover: #93aff5;
+  --dorado: #e3b341;
+  --presente: #4ade80;
+  --ambar: #fbbf24;
+  --falta: #f87171;
+
+  /* Sobre fondo oscuro el tinte tiene que ser bastante mas opaco para
+     llegar a verse. */
+  --tinte-presente: rgba(74, 222, 128, 0.16);
+  --tinte-falta:    rgba(248, 113, 113, 0.16);
+  --tinte-ambar:    rgba(251, 191, 36, 0.16);
+  --tinte-indigo:   rgba(123, 156, 240, 0.16);
+  --tinte-dorado:   rgba(227, 179, 65, 0.18);
+  --tinte-marino:   rgba(123, 156, 240, 0.18);
+  --presente-fuerte: #4ade80;
+  --dorado-claro: #f0c14b;
+  --marino-claro: #24508f;
+  /* El marino como TEXTO no se lee sobre fondo oscuro; como superficie
+     (la barra lateral) tiene que seguir siendo oscuro, asi que van
+     separados. */
+  --marino-texto: #9db6f5;
+
+  --sombra: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(0, 0, 0, 0.3);
+  --sombra-alta: 0 10px 34px rgba(0, 0, 0, 0.5);
+}
+
+/* Cambiar de tema deja de ser un salto. Solo las propiedades que cambian:
+   animar `all` obliga al navegador a repintar de mas. */
+body,
+.tarjeta, .barra-superior, .barra-lateral, .alumno, .campo, .boton,
+.chip-docente, .grupo-descargas, .indicador, .pestana {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Quien pide en su sistema que no haya animaciones, no las tiene. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--indigo); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+
+:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+
+/* ------------------------------ Estructura ------------------------- */
+.app { min-height: 100%; }
+
+.barra-lateral {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--lateral);
+  background: var(--marino);
+  border-radius: 0 18px 18px 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  z-index: 40;
+}
+
+/* Marca: escudo + nombre. En el celular se queda solo el escudo. */
+.marca-lateral {
+  display: flex; align-items: center; gap: 11px;
+  padding: 4px 6px;
+  margin-bottom: 20px;
+  color: #fff;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.marca-lateral:hover { text-decoration: none; color: #fff; }
+.escudo-nav {
+  width: 40px; height: 40px;
+  flex: none;
+  object-fit: contain;
+  /* Halo claro detras: el escudo lleva marino y sobre la barra lateral,
+     que tambien es marino, se perderia el contorno. */
+  padding: 3px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.92);
+}
+.nombre-nav {
+  display: flex; flex-direction: column; min-width: 0;
+  font-size: 14px; font-weight: 800; letter-spacing: 0.04em;
+}
+.nombre-nav small {
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.nav-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  overflow-y: auto;
+}
+
+.nav-lateral a,
+.nav-lateral .salir-nav {
+  display: flex; align-items: center; gap: 11px;
+  min-height: 40px;
+  padding: 0 11px;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 13px; font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+/* «Cerrar sesión» es un boton dentro de un formulario, no un enlace: se
+   cierra con POST para que una pagina ajena no pueda echar al docente a
+   mitad del llamado de asistencia con un simple <img src="/salir/">.
+   Estos ajustes le quitan al boton su apariencia propia. */
+.nav-lateral .salir-nav {
+  appearance: none; background: none; border: 0; cursor: pointer;
+  width: 100%; font: inherit; font-size: 13px; font-weight: 500;
+  text-align: left;
+}
+.nav-lateral a svg, .nav-lateral .salir-nav svg { flex: none; }
+.nav-lateral a span,
+.nav-lateral .salir-nav span { overflow: hidden; text-overflow: ellipsis; }
+.nav-lateral a:hover,
+.nav-lateral .salir-nav:hover { background: rgba(255, 255, 255, 0.11); color: #fff; text-decoration: none; }
+.nav-lateral a.activo { background: var(--indigo); color: #fff; font-weight: 600; }
+.nav-lateral .salir-nav:hover { background: rgba(185, 28, 28, 0.6); }
+
+/* ---- Dentro de un curso ----------------------------------------
+   Sus acciones van enmarcadas en el dorado de la universidad. Asi se
+   distingue de un vistazo lo que es del curso de lo que es del sistema,
+   que es lo unico que comparten: estar en el mismo menu. */
+.bloque-curso {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 13px 0;
+  padding: 7px 5px 7px 0;
+  border-left: 3px solid var(--dorado);
+  border-radius: 0 11px 11px 0;
+  background: var(--tinte-dorado);
+}
+
+.titulo-nav {
+  display: flex; align-items: center; gap: 6px;
+  margin: 2px 10px 5px;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--dorado);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.titulo-nav svg { flex: none; }
+
+.bloque-curso a { margin-left: 5px; }
+.bloque-curso a:hover { background: rgba(255, 255, 255, 0.12); }
+/* La pagina abierta dentro del curso, tambien en dorado: el indigo queda
+   para lo que es del sistema. */
+.bloque-curso a.activo {
+  background: var(--dorado);
+  color: #1a2333;
+  font-weight: 700;
+}
+
+.nav-lateral .separador { flex: 1; min-height: 14px; }
+
+.pie-lateral {
+  margin-top: auto;
+  padding: 12px 11px 0;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 10px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.contenido { margin-left: var(--lateral); min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ------------------------------ Barra superior --------------------- */
+/* En pantalla grande la marca ya está en la barra lateral; repetirla aquí
+   solo quita sitio. En el celular, donde la lateral es de iconos, vuelve. */
+@media (min-width: 721px) {
+  .barra-superior .logo { display: none; }
+}
+
+.barra-superior {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--tarjeta);
+  border-bottom: 1px solid var(--borde);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 22px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--marino);
+  font-size: 19px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.logo:hover { text-decoration: none; }
+.logo .arroba {
+  width: 30px; height: 30px;
+  object-fit: contain;
+}
+:root[data-tema='oscuro'] .logo { color: #c7d2fe; }
+
+
+/* Selector para saltar de un curso a otro sin volver al inicio */
+
+.acciones-superior { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+
+.boton-icono {
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--texto-tenue);
+  cursor: pointer;
+}
+.boton-icono:hover { background: var(--franja); color: var(--texto); }
+
+.quien-soy {
+  display: flex; align-items: center; gap: 9px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--tarjeta);
+  text-align: left;
+}
+.quien-soy .iniciales {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; flex: none;
+  border-radius: 50%;
+  background: var(--marino);
+  color: #fff;
+  font-size: 11.5px; font-weight: 800;
+}
+.quien-soy .quien { display: flex; flex-direction: column; line-height: 1.2; }
+.quien-soy .quien strong {
+  font-size: 12.5px; font-weight: 600;
+  max-width: 190px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.quien-soy .quien small { font-size: 10.5px; color: var(--texto-tenue); }
+
+
+
+/* ------------------------------ Página ----------------------------- */
+.pagina { padding: 22px; max-width: 1240px; width: 100%; margin: 0 auto; flex: 1; }
+
+.encabezado-pagina {
+  display: flex; align-items: center; gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.encabezado-pagina h1 { font-size: 21px; }
+.encabezado-pagina p { margin: 2px 0 0; color: var(--texto-tenue); font-size: 13px; }
+.encabezado-pagina .derecha {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.volver {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--texto-tenue); font-size: 13px; font-weight: 600;
+}
+
+/* ------------------------------ Tarjetas --------------------------- */
+.tarjeta {
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+.tarjeta + .tarjeta { margin-top: 16px; }
+
+.tarjeta-cabecera {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--borde-suave);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.tarjeta-cabecera h2 { font-size: 16px; }
+.tarjeta-cabecera .derecha {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.tarjeta-cuerpo { padding: 20px; }
+
+/* ------------------- Lista de docentes (inicio del admin) ---------- */
+/* Botones, no un desplegable: el administrador necesita ver de un vistazo
+   quien dicta que, y a quien le falta curso por asignar. */
+.lista-docentes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(258px, 100%), 1fr));
+  gap: 9px;
+}
+
+.chip-docente {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 11px;
+  border: 1.5px solid var(--borde);
+  border-radius: 12px;
+  background: var(--tarjeta);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.12s, background 0.12s, transform 0.08s;
+}
+.chip-docente:hover {
+  border-color: var(--indigo);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+.chip-docente:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+
+.chip-docente .avatar-chip {
+  flex: none;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--marino);
+  color: #fff;
+  font-size: 12.5px; font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* El apellido arriba y los nombres debajo: un nombre peruano completo no
+   entra en una linea, y cortarlo se lleva justo lo que identifica. */
+.chip-docente .datos {
+  display: flex; flex-direction: column;
+  flex: 1; min-width: 0;
+  line-height: 1.25;
+}
+.chip-docente .datos strong {
+  font-size: 12.5px; font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chip-docente .datos small {
+  font-size: 11.5px; color: var(--texto-tenue);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* El recuento, en su propia columna: no compite con el nombre por el sitio. */
+.chip-docente .cuenta-chip {
+  flex: none;
+  min-width: 26px;
+  padding: 3px 7px;
+  border-radius: 8px;
+  background: var(--borde-suave);
+  color: var(--texto-tenue);
+  font-size: 13px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* Quitar el filtro no es «un docente mas»: se marca en punteado. */
+.chip-todos { border-style: dashed; }
+
+/* El que esta filtrando ahora mismo. */
+.chip-docente.elegido {
+  border-color: var(--indigo);
+  border-style: solid;
+  background: var(--tinte-indigo);
+}
+.chip-docente.elegido .datos strong { color: var(--indigo); }
+.chip-docente.elegido .cuenta-chip { background: var(--indigo); color: #fff; }
+
+/* Sin ningun curso: apagado, porque es un aviso para el administrador. */
+.chip-docente.sin-grupos .avatar-chip { background: var(--texto-tenue); }
+.chip-docente.sin-grupos .cuenta-chip {
+  background: var(--tinte-ambar);
+  color: var(--ambar);
+}
+
+/* Pestañas dentro de una tarjeta (alta / matrícula de estudiantes) */
+.pestanas {
+  display: flex; gap: 2px; flex-wrap: wrap;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+.pestana {
+  appearance: none; background: none; border: 0; cursor: pointer;
+  padding: 11px 14px; margin-bottom: -1px;
+  font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--texto-tenue);
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+}
+.pestana:hover { color: var(--texto); }
+.pestana.activa { color: var(--indigo); border-bottom-color: var(--indigo); }
+/* Los filtros del registro de seguridad son enlaces, no botones:
+   cada vista tiene su propia direccion y se puede compartir. */
+a.pestana:hover { text-decoration: none; color: var(--indigo); }
+.pestana:focus-visible { outline: 2px solid var(--indigo); outline-offset: -2px; }
+
+/* Las secciones de Administración: mismas pestañas, pero sueltas sobre el
+   fondo y con el recuento de cada una al lado. */
+.pestanas-admin {
+  padding: 0;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--borde);
+  gap: 4px;
+}
+.pestanas-admin .pestana {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 15px;
+  font-size: 13.5px;
+}
+.pestanas-admin .pestana svg { opacity: 0.8; }
+.pestanas-admin .pestana small {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--borde-suave);
+  color: var(--texto-tenue);
+  font-size: 11px; font-weight: 700;
+}
+.pestanas-admin .pestana.activa small { background: var(--indigo); color: #fff; }
+.tarjeta-pie {
+  padding: 14px 20px;
+  border-top: 1px solid var(--borde-suave);
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+
+.rejilla { display: grid; gap: 16px; }
+.rejilla.dos { grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr)); }
+
+/* Fichas de curso. `auto-fill` y no `auto-fit`: con auto-fit, una sola
+   ficha se estira a todo el ancho de la pantalla y queda desproporcionada;
+   con auto-fill conserva su tamaño de ficha, haya una o haya nueve. */
+.rejilla.cursos { grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); }
+.rejilla.tres { grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
+.rejilla.cuatro { grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); }
+
+/* --------------------------- Indicadores --------------------------- */
+.indicador {
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.indicador .icono {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  color: #fff; font-weight: 800; font-size: 15px;
+  flex-shrink: 0;
+}
+.indicador .valor { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.indicador .etiqueta {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--texto-tenue); margin-top: 2px;
+}
+
+.fondo-gris { background: var(--texto-tenue); }
+.fondo-marino { background: var(--marino); }
+.fondo-indigo { background: var(--indigo); }
+.fondo-dorado { background: var(--dorado); }
+.fondo-presente { background: var(--presente); }
+.fondo-ambar { background: var(--ambar); }
+.fondo-falta { background: var(--falta); }
+
+/* ------------------------------ Botones ---------------------------- */
+.boton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit; font-weight: 600; font-size: 13.5px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.08s, border-color 0.15s;
+  text-decoration: none;
+}
+.boton:hover { text-decoration: none; }
+.boton:active { transform: scale(0.985); }
+.boton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.boton-primario { background: var(--indigo); color: #fff; }
+.boton-primario:hover { background: var(--indigo-hover); color: #fff; }
+
+
+.boton-claro { background: var(--tarjeta); color: var(--texto); border-color: var(--borde); }
+.boton-claro:hover { background: var(--franja); color: var(--texto); }
+
+.boton-peligro { background: var(--falta); color: #fff; }
+.boton-peligro:hover { background: #b91c1c; color: #fff; }
+
+.boton-ancho { width: 100%; padding: 13px 16px; font-size: 14.5px; }
+
+/* Continuar una clase ya abierta: verde, para que se distinga de empezar
+   una nueva de un vistazo. */
+.boton-continuar {
+  background: var(--presente);
+  border-color: var(--presente);
+  color: #fff;
+}
+.boton-continuar:hover { background: var(--presente-fuerte); border-color: var(--presente-fuerte); color: #fff; }
+
+/* Quién dicta el grupo, en la ficha de curso de quien no lo dicta. */
+.docente-del-grupo { display: flex; align-items: center; gap: 5px; }
+.docente-del-grupo svg { flex: none; opacity: 0.75; }
+.boton-chico { padding: 7px 11px; font-size: 12.5px; }
+
+/* ----------------------------- Formularios ------------------------- */
+.campo-grupo { margin-bottom: 14px; }
+.campo-grupo:last-child { margin-bottom: 0; }
+
+label.etiqueta {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--texto-tenue);
+}
+
+.campo {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: var(--tarjeta);
+  color: var(--texto);
+  font: inherit;
+  font-size: 16px; /* evita el zoom automático en iOS */
+}
+.campo:focus {
+  outline: none;
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px var(--tinte-indigo);
+}
+textarea.campo { resize: vertical; min-height: 68px; }
+
+.fila-campos { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); }
+
+/* ------------------------------ Tablas ----------------------------- */
+.tabla-envoltorio { overflow-x: auto; }
+
+/* Acciones dentro de una fila de tabla: se envuelven en vez de empujar la
+   tabla a lo ancho y dejar los botones fuera de la pantalla. */
+.acciones-fila {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+/* Formulario de edición plegado bajo la fila de su curso. */
+.fila-edicion > td { background: var(--fondo); padding: 16px 14px; }
+
+/* Matriz alumno x fecha del reporte: muchas columnas estrechas de una letra */
+.tabla-matriz th, .tabla-matriz td { padding-left: 6px; padding-right: 6px; }
+.tabla-matriz td[class*="celda-"] { font-weight: 700; font-variant-numeric: tabular-nums; }
+.celda-p { color: var(--presente); background: var(--tinte-presente); }
+.celda-f { color: var(--falta);    background: var(--tinte-falta); }
+.celda-vacia { color: var(--texto-tenue); }
+
+table.tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.tabla thead th {
+  background: var(--marino);
+  color: #fff;
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 10px 11px;
+  text-align: left;
+  white-space: nowrap;
+}
+table.tabla tbody td { padding: 9px 11px; border-bottom: 1px solid var(--borde-suave); }
+table.tabla tbody tr:nth-child(even) { background: var(--franja); }
+table.tabla tbody tr.riesgo { background: var(--tinte-falta); }
+table.tabla .centro { text-align: center; }
+table.tabla .mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 12px; }
+
+/* ----------------------------- Insignias --------------------------- */
+.insignia {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+}
+.ins-gris { background: var(--franja); color: var(--texto-tenue); border: 1px solid var(--borde); }
+.ins-marino { background: var(--tinte-marino); color: var(--marino-texto); }
+.ins-dorado { background: var(--tinte-dorado); color: var(--dorado); }
+.ins-verde { background: var(--tinte-presente); color: var(--presente); }
+.ins-ambar { background: var(--tinte-ambar); color: var(--ambar); }
+.ins-rojo { background: var(--tinte-falta); color: var(--falta); }
+
+
+/* ------------------------- Barra de porcentaje --------------------- */
+.barra { display: flex; align-items: center; gap: 9px; }
+.barra .riel {
+  flex: 1; min-width: 60px; height: 8px;
+  background: var(--borde); border-radius: 999px; overflow: hidden;
+}
+.barra .relleno { height: 100%; border-radius: 999px; transition: width 0.4s; }
+.barra .cifra { width: 52px; text-align: right; font-weight: 700; font-size: 12px; }
+
+.verde { color: var(--presente); }
+.ambar { color: var(--ambar); }
+.rojo { color: var(--falta); }
+.tenue { color: var(--texto-tenue); }
+
+/* ------------------------- Botones P / T / F / J ------------------- */
+.selector-estado {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.selector-estado input { position: absolute; opacity: 0; pointer-events: none; }
+
+.selector-estado label {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px;
+  height: 46px;
+  border: 2px solid var(--borde);
+  border-radius: 9px;
+  background: var(--tarjeta);
+  font-weight: 800; font-size: 15px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.selector-estado label small { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.selector-estado label:hover { border-color: var(--texto-tenue); }
+
+.selector-estado .op-presente { color: var(--presente); }
+.selector-estado .op-falta { color: var(--falta); }
+
+.selector-estado input:checked + label.op-presente { background: var(--presente); border-color: var(--presente); color: #fff; }
+.selector-estado input:checked + label.op-falta { background: var(--falta); border-color: var(--falta); color: #fff; }
+
+.selector-estado input:focus-visible + label { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.selector-estado input:disabled + label { opacity: 0.6; cursor: not-allowed; }
+
+/* --------------------------- Fila de alumno ------------------------ */
+.alumno {
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--tarjeta);
+  padding: 12px;
+  margin-bottom: 9px;
+}
+.alumno .fila-superior { display: flex; align-items: flex-start; gap: 10px; }
+.alumno .orden {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--franja);
+  color: var(--texto-tenue);
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 700;
+}
+.alumno .nombre { font-weight: 600; font-size: 13.5px; }
+.alumno .datos { font-size: 11.5px; color: var(--texto-tenue); margin-top: 1px; }
+.alumno .selector-estado { margin-top: 10px; }
+.alumno textarea { margin-top: 8px; font-size: 13px; }
+
+/* En pantalla estrecha la tarjeta apila nombre, botones y observacion; el
+   icono de observacion va anclado arriba a la derecha, junto al nombre,
+   que es donde se busca. En pantalla grande la rejilla lo recoloca. */
+.alumno { position: relative; }
+.alumno .btn-observacion { position: absolute; top: 9px; right: 9px; }
+
+/* La franja del estado, como sombra interior: no ocupa sitio en la caja
+   ni pelea con el borde de la fila. */
+.alumno.es-presente { box-shadow: inset 4px 0 0 var(--presente); }
+.alumno.es-falta    { box-shadow: inset 4px 0 0 var(--falta); }
+
+/* ---- En pantalla grande, la lista es una lista ---------------------
+   Una sola tarjeta con una fila por alumno. Con 28 alumnos, la diferencia
+   entre ver seis y ver quince es la diferencia entre buscar a alguien y
+   encontrarlo. */
+@media (min-width: 721px) {
+  .lista-asistencia {
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    overflow: hidden;
+  }
+
+  .lista-asistencia .alumno {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 14px;
+    margin: 0;
+    padding: 7px 14px;
+    border: 0;
+    border-bottom: 1px solid var(--borde-suave);
+    border-radius: 0;
+  }
+  .lista-asistencia .alumno:last-child { border-bottom: 0; }
+  .lista-asistencia .alumno:hover { background: var(--franja); }
+
+  .lista-asistencia .fila-superior { align-items: center; }
+  .lista-asistencia .alumno .datos { margin-top: 0; }
+
+  /* Los botones, a su tamaño: lo justo para acertar con el ratón. */
+  .lista-asistencia .selector-estado {
+    margin-top: 0;
+    width: 200px;
+    gap: 5px;
+  }
+  .lista-asistencia .selector-estado label {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px;
+    height: 34px;
+    border-width: 1.5px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .lista-asistencia .selector-estado label small { font-size: 9px; }
+
+  /* La observación se despliega debajo, ocupando la fila entera. */
+  .lista-asistencia .alumno textarea {
+    grid-column: 1 / -1;
+    margin-top: 2px;
+  }
+  .lista-asistencia .btn-observacion { position: static; margin: 0; }
+}
+
+/* ---------------------------- Barra fija --------------------------- */
+.barra-fija {
+  position: sticky;
+  bottom: 0;
+  background: var(--tarjeta);
+  border-top: 1px solid var(--borde);
+  padding: 11px 20px calc(11px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  box-shadow: 0 -4px 18px rgba(16, 24, 40, 0.06);
+  z-index: 20;
+  margin: 18px -22px 0;
+}
+.barra-fija .derecha {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+/* Recuento P/T/J/F dentro de la barra fija: con 30 alumnos en el celular,
+   los contadores de arriba quedan fuera de pantalla justo cuando hacen
+   falta, al final de la lista. */
+.resumen-vivo { display: flex; gap: 6px; flex-wrap: wrap; }
+.resumen-vivo .punto {
+  display: inline-flex; align-items: baseline; gap: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.resumen-vivo .punto b { font-size: 13px; }
+.resumen-vivo .p { color: var(--presente); background: var(--tinte-presente); }
+.resumen-vivo .f { color: var(--falta);    background: var(--tinte-falta); }
+
+/* ---- Descargas agrupadas -------------------------------------------
+   Tres formatos de lo mismo: se presentan como un control, no como tres
+   botones sueltos separados por un texto que hacia de etiqueta. */
+.grupo-descargas {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--borde);
+  border-radius: 9px;
+  background: var(--tarjeta);
+  overflow: hidden;
+}
+.grupo-descargas .etiqueta-grupo {
+  display: flex; align-items: center;
+  padding: 0 11px;
+  background: var(--franja);
+  border-right: 1px solid var(--borde);
+  color: var(--texto-tenue);
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.grupo-descargas a {
+  display: flex; align-items: center;
+  padding: 7px 13px;
+  color: var(--texto);
+  font-size: 12.5px; font-weight: 600;
+  border-left: 1px solid var(--borde-suave);
+}
+.grupo-descargas a:first-of-type { border-left: 0; }
+.grupo-descargas a:hover {
+  background: var(--franja);
+  color: var(--indigo);
+  text-decoration: none;
+}
+.grupo-descargas a:focus-visible { outline: 2px solid var(--indigo); outline-offset: -2px; }
+
+@media (max-width: 720px) {
+  /* En el celular la etiqueta sobra: el contexto ya es la clase abierta. */
+  .grupo-descargas { flex: 1; }
+  .grupo-descargas .etiqueta-grupo { display: none; }
+  .grupo-descargas a { flex: 1; justify-content: center; }
+}
+
+/* ----------------------------- Mensajes ---------------------------- */
+.mensajes { margin-bottom: 16px; display: grid; gap: 8px; }
+.mensaje {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 11px 14px;
+  border-radius: 9px;
+  border: 1px solid;
+  font-size: 13px;
+}
+.mensaje.success { background: var(--tinte-presente); border-color: var(--presente); color: var(--presente); }
+.mensaje.error { background: var(--tinte-falta); border-color: var(--falta); color: var(--falta); }
+.mensaje.warning { background: var(--tinte-ambar); border-color: var(--ambar); color: var(--ambar); }
+.mensaje.info { background: var(--tinte-indigo); border-color: var(--indigo); color: var(--indigo); }
+
+/* ----------------------------- Vacíos ------------------------------ */
+.vacio { text-align: center; padding: 48px 20px; }
+.vacio .icono {
+  width: 56px; height: 56px; margin: 0 auto 14px;
+  border-radius: 16px;
+  background: var(--tinte-marino);
+  color: var(--marino-texto);
+  display: grid; place-items: center;
+}
+.vacio h3 { font-size: 15.5px; }
+.vacio p { color: var(--texto-tenue); margin: 6px auto 16px; max-width: 420px; font-size: 13px; }
+
+/* ------------------------- Cabecera del reporte -------------------- */
+.cabecera-oficial { text-align: center; padding: 16px 20px; background: var(--marino); color: #fff; border-radius: var(--radio) var(--radio) 0 0; }
+.cabecera-oficial strong { display: block; font-size: 14.5px; }
+.cabecera-oficial span { font-size: 12px; color: var(--dorado-claro); font-weight: 700; }
+
+.datos-curso { display: grid; gap: 6px 22px; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); padding: 16px 20px; font-size: 13px; }
+.datos-curso div { display: flex; gap: 7px; }
+.datos-curso dt { font-weight: 700; color: var(--texto-tenue); white-space: nowrap; }
+.datos-curso dd { margin: 0; }
+
+/* ----------------------------- Login ------------------------------- */
+/* =============================== Login ============================= */
+.pagina-login {
+  position: relative;
+  min-height: 100vh;
+  display: grid; place-items: center;
+  padding: 32px 16px calc(32px + env(safe-area-inset-bottom, 0px));
+  background: var(--fondo);
+  overflow: hidden;
+}
+
+/* La banda de color termina en una curva por encima de la tarjeta, en vez
+   de cortar en diagonal por detras de ella. */
+.pagina-login::before {
+  content: "";
+  position: absolute;
+  inset: 0 -10% auto -10%;
+  height: 340px;
+  border-radius: 0 0 50% 50% / 0 0 70px 70px;
+  background:
+    radial-gradient(90% 120% at 50% 0%, rgba(255, 255, 255, 0.12) 0%, transparent 60%),
+    linear-gradient(165deg, var(--marino) 0%, var(--marino-claro) 100%);
+}
+
+.caja-login { position: relative; width: 100%; max-width: 392px; }
+
+.identidad-login { text-align: center; color: #fff; margin-bottom: 22px; }
+.identidad-login .escudo {
+  display: block;
+  width: 74px; height: 74px; margin: 0 auto 14px;
+  object-fit: contain;
+  /* Circulo claro detras: el escudo lleva marino y el fondo tambien. */
+  padding: 7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(8, 20, 45, 0.28);
+}
+.identidad-login h1 {
+  font-size: 17px; line-height: 1.35; letter-spacing: 0.01em;
+}
+.identidad-login p {
+  margin: 7px 0 0;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--dorado-claro);
+}
+
+/* La tarjeta, con mas aire y una sombra que la despega del fondo. */
+.caja-login .tarjeta {
+  border-radius: 16px;
+  border-color: transparent;
+  box-shadow: 0 18px 44px rgba(8, 20, 45, 0.20), 0 2px 6px rgba(8, 20, 45, 0.08);
+}
+.caja-login .tarjeta-cabecera { padding: 20px 24px 0; border-bottom: 0; }
+.caja-login .tarjeta-cabecera h2 { font-size: 19px; letter-spacing: -0.01em; }
+.caja-login .tarjeta-cuerpo { padding: 18px 24px 24px; }
+.caja-login .campo { padding: 11px 13px; }
+
+.pie-login {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--texto-tenue);
+}
+
+@media (max-width: 480px) {
+  .pagina-login { padding-top: 26px; }
+  .pagina-login::before { height: 290px; }
+  .identidad-login .escudo { width: 64px; height: 64px; }
+  .identidad-login h1 { font-size: 15.5px; }
+  .caja-login .tarjeta-cabecera { padding: 18px 18px 0; }
+  .caja-login .tarjeta-cuerpo { padding: 16px 18px 20px; }
+}
+
+/* ----------------------------- Utilidades -------------------------- */
+.oculto { display: none !important; }
+.texto-centro { text-align: center; }
+.sin-margen { margin: 0; }
+.nota { font-size: 11.5px; color: var(--texto-tenue); }
+.pila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ------------------------------ Celular ---------------------------- */
+@media (max-width: 720px) {
+  /* Solo iconos: el ancho de la pantalla vale más que las etiquetas. */
+  :root { --lateral: 62px; }
+  .barra-lateral { padding: 12px 7px; border-radius: 0 14px 14px 0; align-items: center; }
+  .marca-lateral { margin-bottom: 14px; padding: 0; }
+  .escudo-nav { width: 36px; height: 36px; padding: 2px; }
+  .nombre-nav, .titulo-nav, .pie-lateral { display: none; }
+  /* Sin etiquetas, la franja dorada es lo unico que dice «estas dentro
+     de un curso»; se conserva y el resto del marco se simplifica. */
+  .bloque-curso { margin: 8px 0; padding: 6px 0; border-radius: 0 8px 8px 0; }
+  .bloque-curso a { margin-left: 2px; }
+  .nav-lateral { align-items: center; gap: 6px; }
+  .nav-lateral a,
+  .nav-lateral .salir-nav { width: 44px; height: 44px; padding: 0; justify-content: center; }
+  .nav-lateral a span,
+  .nav-lateral .salir-nav span { display: none; }
+  .barra-superior { padding: 10px 12px; gap: 8px; }
+  /* Sin sitio para el nombre: el avatar vuelve a ser solo el círculo. */
+  .quien-soy { padding: 0; border: 0; background: none; }
+  .quien-soy .quien { display: none; }
+  .logo span.texto { display: none; }
+  .pagina { padding: 14px; }
+  .barra-fija { margin: 14px -14px 0; padding-left: 14px; padding-right: 14px; }
+  .encabezado-pagina h1 { font-size: 18px; }
+  .indicador { padding: 11px 12px; gap: 9px; }
+  .indicador .icono { width: 34px; height: 34px; font-size: 13px; }
+  .indicador .valor { font-size: 18px; }
+
+  /* Llamar lista se hace de pie y con una mano: botones más altos que el
+     mínimo táctil recomendado (44px) y etiqueta legible. */
+  .selector-estado { gap: 7px; }
+  .selector-estado label { height: 56px; font-size: 17px; }
+  .selector-estado label small { font-size: 9px; }
+
+  /* «Marcar todos presentes» es el primer gesto de casi toda clase. */
+  .btn-todos { width: 100%; justify-content: center; }
+
+  /* En la barra fija el recuento va primero y las acciones debajo, a lo
+     ancho, en vez de apretarse en una sola línea. */
+  .barra-fija { flex-direction: column; align-items: stretch; gap: 8px; }
+  .barra-fija .derecha { margin-left: 0; }
+  .barra-fija .derecha .boton { flex: 1; justify-content: center; }
+  .resumen-vivo { justify-content: space-between; }
+  .resumen-vivo .punto { flex: 1; justify-content: center; }
+
+  /* Las rejillas ya se reacomodan solas con auto-fit; aquí basta con que
+     el nombre del alumno se lea a un brazo de distancia. */
+  .alumno .nombre { font-size: 14.5px; }
+
+  /* Un docente por fila: los apellidos y nombres completos no caben en dos
+     columnas sin quedar cortados por los puntos suspensivos. */
+  .lista-docentes { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .barra-lateral, .barra-superior, .barra-fija, .encabezado-pagina .derecha { display: none !important; }
+  .contenido { margin-left: 0; }
+  .tarjeta { box-shadow: none; }
+}

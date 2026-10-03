@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <div>
+    <a href="{% url 'admin-panel' %}" class="volver">← Administración</a>
+    <h1>Registro de seguridad</h1>
+    <p>Quién entra al sistema y qué se ha cambiado en él</p>
+  </div>
+</div>
+
+{% comment %}
+  Lo de arriba responde a una sola pregunta: ¿alguien está probando
+  contraseñas? Varios intentos fallidos desde la misma IP no son un
+  docente que se equivocó al escribir.
+{% endcomment %}
+<div class="rejilla tres" style="margin-bottom:18px">
+  <div class="indicador">
+    <span class="icono fondo-presente">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>
+    </span>
+    <div><div class="valor">{{ entradas_hoy }}</div><div class="etiqueta">Entradas (24 h)</div></div>
+  </div>
+  <div class="indicador">
+    <span class="icono {% if fallos_hoy %}fondo-ambar{% else %}fondo-marino{% endif %}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+    </span>
+    <div>
+      <div class="valor {% if fallos_hoy %}ambar{% endif %}">{{ fallos_hoy }}</div>
+      <div class="etiqueta">Intentos fallidos (24 h)</div>
+    </div>
+  </div>
+  <div class="indicador">
+    <span class="icono {% if bloqueos_hoy %}fondo-falta{% else %}fondo-presente{% endif %}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </span>
+    <div>
+      <div class="valor {% if bloqueos_hoy %}rojo{% endif %}">{{ bloqueos_hoy }}</div>
+      <div class="etiqueta">Accesos bloqueados (24 h)</div>
+    </div>
+  </div>
+</div>
+
+{% if ips_con_fallos %}
+  <div class="tarjeta" style="margin-bottom:18px">
+    <div class="tarjeta-cabecera">
+      <h2>De dónde vinieron los intentos fallidos</h2>
+      <p class="nota sin-margen">Últimas 24 horas</p>
+    </div>
+    <div class="tarjeta-cuerpo pila">
+      {% for fila in ips_con_fallos %}
+        <span class="insignia {% if fila.veces >= 5 %}ins-rojo{% else %}ins-ambar{% endif %}">
+          <span class="mono">{{ fila.ip|default:"desconocida" }}</span>
+          · {{ fila.veces }} {% if fila.veces == 1 %}intento{% else %}intentos{% endif %}
+        </span>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+<div class="pestanas pestanas-admin" role="tablist">
+  <a href="{% url 'seguridad' %}" class="pestana {% if ver == 'todo' %}activa{% endif %}">Todo</a>
+  <a href="{% url 'seguridad' %}?ver=accesos" class="pestana {% if ver == 'accesos' %}activa{% endif %}">Accesos</a>
+  <a href="{% url 'seguridad' %}?ver=fallidos" class="pestana {% if ver == 'fallidos' %}activa{% endif %}">Intentos fallidos</a>
+  <a href="{% url 'seguridad' %}?ver=cambios" class="pestana {% if ver == 'cambios' %}activa{% endif %}">Cambios en el sistema</a>
+</div>
+
+<div class="tarjeta">
+  <div class="tarjeta-cabecera">
+    <h2>Lo último</h2>
+    <p class="nota sin-margen">
+      {{ total }} anotacion{{ total|pluralize:"es" }} en total · se guardan {{ dias_que_se_guarda }} días
+    </p>
+  </div>
+
+  {% if eventos %}
+    <div class="tabla-envoltorio">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Cuándo</th>
+            <th>Qué pasó</th>
+            <th>Quién</th>
+            <th>Desde</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in eventos %}
+            <tr>
+              <td class="mono">{{ e.momento|date:"d/m/Y H:i" }}</td>
+              <td><span class="insignia {{ e.insignia }}">{{ e.get_tipo_display }}</span></td>
+              <td>{{ e.usuario|default:"—" }}</td>
+              <td class="mono tenue">{{ e.ip|default:"—" }}</td>
+              <td class="tenue">{{ e.detalle|default:"" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if total > tope %}
+      <div class="tarjeta-cuerpo">
+        <p class="nota sin-margen">
+          Se muestran las {{ tope }} anotaciones más recientes.
+        </p>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="vacio">
+      <span class="icono">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      </span>
+      <h3>Nada que mostrar</h3>
+      <p>
+        Aquí se anotan las entradas al sistema, los intentos fallidos y los
+        cambios que hace el administrador. Se irá llenando solo con el uso.
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

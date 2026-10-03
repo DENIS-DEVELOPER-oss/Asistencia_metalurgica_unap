@@ -1,0 +1,41 @@
+# --------------------------- Python / Django ---------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Entorno virtual (lo crea instalar.bat)
+app/
+.venv/
+venv/
+
+# Configuración local: trae la SECRET_KEY y la clave de MySQL
+.env
+
+# Notas propias con contraseñas de prueba
+usuarios.txt
+
+# Archivos generados
+*.log
+staticfiles/
+
+# ------------------------------ Respaldos -------------------------------
+# Un respaldo lleva los nombres y los codigos de los 28 alumnos: fuera del
+# repositorio, que se comparte y se copia.
+respaldos/
+_backup_mysql/
+*.sql.bak
+
+# ------------------------------- Editor ---------------------------------
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+
+# Registro de la aplicación y estáticos recogidos
+asistencia.log*
+
+# Volcados de MySQL: traen nombres reales de alumnos y hashes de claves.
+# Se quedan solo en el equipo; no se publican.
+base_de_datos/*.sql
+base_de_datos/*.pdf

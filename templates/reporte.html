@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% load l10n %}
+
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <div>
+    <a href="{% url 'cursos' %}" class="volver">← Mis cursos</a>
+    <h1>Reporte de asistencia</h1>
+    <p>{{ grupo.curso.codigo }} · {{ grupo.nombre }}</p>
+  </div>
+  <div class="derecha">
+    <a href="{% url 'exportar' grupo.id_grupo 'excel' %}" class="boton boton-claro">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 13 6 6M15 13l-6 6"/></svg>
+      Excel
+    </a>
+    <a href="{% url 'exportar' grupo.id_grupo 'word' %}" class="boton boton-claro">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m8 13 2 5 2-5 2 5 2-5"/></svg>
+      Word
+    </a>
+    <a href="{% url 'exportar' grupo.id_grupo 'pdf' %}" class="boton boton-primario">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+      PDF
+    </a>
+  </div>
+</div>
+
+<!-- Cabecera oficial -->
+<div class="tarjeta" style="margin-bottom:16px">
+  <div class="cabecera-oficial">
+    <strong>{{ reporte.cabecera.universidad }}</strong>
+    <span>REPORTE DE ASISTENCIA — {{ reporte.cabecera.periodo }}</span>
+  </div>
+  <dl class="datos-curso">
+    <div><dt>Facultad:</dt><dd>{{ reporte.cabecera.facultad }}</dd></div>
+    <div><dt>Escuela:</dt><dd>{{ reporte.cabecera.escuela }}</dd></div>
+    <div><dt>Curso:</dt><dd>{{ reporte.cabecera.codigo_curso }} - {{ reporte.cabecera.curso }}</dd></div>
+    <div><dt>Docente:</dt><dd>{{ reporte.cabecera.docente }}</dd></div>
+    <div style="grid-column:1/-1">
+      <dt>Semestre:</dt>
+      <dd>
+        {{ reporte.cabecera.semestre_texto }} · Créditos: {{ reporte.cabecera.creditos }} ·
+        Grupo: {{ reporte.cabecera.grupo }}
+      </dd>
+    </div>
+    <div style="grid-column:1/-1">
+      <dt>Fecha de emisión:</dt>
+      <dd>{{ reporte.fecha_emision|date:"d/m/Y H:i" }}</dd>
+    </div>
+  </dl>
+</div>
+
+<!-- Indicadores -->
+<div class="rejilla cuatro" style="margin-bottom:16px">
+  <div class="indicador">
+    <span class="icono fondo-marino">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </span>
+    <div><div class="valor">{{ reporte.total_alumnos }}</div><div class="etiqueta">Alumnos</div></div>
+  </div>
+  <div class="indicador">
+    <span class="icono fondo-dorado">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    </span>
+    <div><div class="valor">{{ reporte.total_sesiones }}</div><div class="etiqueta">Clases</div></div>
+  </div>
+  <div class="indicador">
+    <span class="icono fondo-presente">%</span>
+    <div>
+      <div class="valor">{% if reporte.porcentaje_promedio %}{{ reporte.porcentaje_promedio }}%{% else %}—{% endif %}</div>
+      <div class="etiqueta">Promedio</div>
+    </div>
+  </div>
+  <div class="indicador">
+    <span class="icono fondo-falta">!</span>
+    <div>
+      <div class="valor {% if reporte.total_en_riesgo %}rojo{% endif %}">{{ reporte.total_en_riesgo }}</div>
+      <div class="etiqueta">En riesgo</div>
+    </div>
+  </div>
+</div>
+
+{% if reporte.total_en_riesgo %}
+  <div class="mensaje error" style="margin-bottom:16px">
+    <strong>{{ reporte.total_en_riesgo }}</strong>&nbsp;
+    {% if reporte.total_en_riesgo == 1 %}alumno supera{% else %}alumnos superan{% endif %}
+    &nbsp;el {{ reporte.umbral_inhabilitacion|floatformat:0 }}% de faltas y está
+    {% if reporte.total_en_riesgo > 1 %}n{% endif %} en riesgo de inhabilitación.
+  </div>
+{% endif %}
+
+<!-- Tabla -->
+<div class="tarjeta">
+  <div class="tarjeta-cabecera">
+    <h2>Resumen por estudiante</h2>
+    <div class="derecha">
+      {% if solo_riesgo %}
+        <a href="{% url 'reporte' grupo.id_grupo %}" class="boton boton-claro boton-chico">Ver todos</a>
+      {% else %}
+        <a href="{% url 'reporte' grupo.id_grupo %}?riesgo=1" class="boton boton-claro boton-chico">Solo en riesgo</a>
+      {% endif %}
+      <a href="{% url 'matriculados' grupo.id_grupo %}" class="boton boton-claro boton-chico">Lista de matriculados</a>
+    </div>
+  </div>
+
+  {% if alumnos %}
+    <div class="tabla-envoltorio">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th class="centro">N°</th>
+            <th class="centro">Código</th>
+            <th>Apellidos y nombres</th>
+            <th class="centro">P</th>
+            <th class="centro">F</th>
+            <th style="min-width:190px">% Asistencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in alumnos %}
+            <tr {% if a.en_riesgo %}class="riesgo"{% endif %}>
+              <td class="centro">{{ a.numero }}</td>
+              <td class="centro mono">{{ a.codigo }}</td>
+              <td>
+                {{ a.nombre }}
+                {% if a.en_riesgo %}<span class="insignia ins-rojo">Riesgo</span>{% endif %}
+              </td>
+              <td class="centro verde"><strong>{{ a.presentes }}</strong></td>
+              <td class="centro rojo"><strong>{{ a.faltas }}</strong></td>
+              <td>
+                <div class="barra">
+                  <div class="riel">
+                    <div class="relleno fondo-{% if a.semaforo == 'verde' %}presente{% elif a.semaforo == 'ambar' %}ambar{% elif a.semaforo == 'rojo' %}falta{% else %}gris{% endif %}"
+                         style="width:{{ a.porcentaje_asistencia|default:0|unlocalize }}%"></div>
+                  </div>
+                  <span class="cifra {{ a.semaforo }}">
+                    {% if a.porcentaje_asistencia is not None %}{{ a.porcentaje_asistencia|floatformat:1 }}%{% else %}—{% endif %}
+                  </span>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tarjeta-pie">
+      <p class="nota sin-margen">
+        Semáforo: verde ≥ {{ reporte.semaforo.verde|floatformat:0 }}% ·
+        ámbar {{ reporte.semaforo.ambar|floatformat:0 }}–{{ reporte.semaforo.verde|floatformat:0 }}% ·
+        rojo &lt; {{ reporte.semaforo.ambar|floatformat:0 }}%.
+        El porcentaje es el de clases a las que asistió.
+      </p>
+    </div>
+  {% else %}
+    <div class="vacio">
+      <div class="icono">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      </div>
+      <h3>{% if solo_riesgo %}Ningún alumno en riesgo{% else %}Todavía no hay datos{% endif %}</h3>
+      <p>
+        {% if solo_riesgo %}
+          Todos los alumnos están dentro del límite de faltas permitido.
+        {% elif es_titular %}
+          Llama asistencia al menos una vez para que aparezca el reporte.
+        {% else %}
+          El reporte aparecerá cuando {{ grupo.docente.nombre_completo }}
+          registre la primera clase.
+        {% endif %}
+      </p>
+      {% if solo_riesgo %}
+        <a href="{% url 'reporte' grupo.id_grupo %}" class="boton boton-primario">Ver todos</a>
+      {% elif es_titular %}
+        <a href="{% url 'asistencia' grupo.id_grupo %}" class="boton boton-primario">Llamar asistencia</a>
+      {% else %}
+        <a href="{% url 'historial' grupo.id_grupo %}" class="boton boton-primario">Ver historial</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Matriz alumno x fecha: el mismo cuadro que sale en Excel, Word y PDF -->
+{% if alumnos and reporte.sesiones %}
+  <div class="tarjeta">
+    <div class="tarjeta-cabecera">
+      <h2>Detalle por clase</h2>
+      <div class="derecha">
+        <span class="nota">{{ reporte.total_sesiones }} clase{{ reporte.total_sesiones|pluralize }}</span>
+      </div>
+    </div>
+
+    <div class="tabla-envoltorio">
+      <table class="tabla tabla-matriz">
+        <thead>
+          <tr>
+            <th class="centro">N°</th>
+            <th class="centro">Código</th>
+            <th>Apellidos y nombres</th>
+            {% for s in reporte.sesiones %}
+              <th class="centro mono" title="{{ s.fecha|date:'d/m/Y' }} {{ s.hora_inicio|time:'H:i' }}{% if s.tema %} — {{ s.tema }}{% endif %}">
+                {{ s.etiqueta }}
+              </th>
+            {% endfor %}
+            <th class="centro">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in alumnos %}
+            <tr {% if a.en_riesgo %}class="riesgo"{% endif %}>
+              <td class="centro">{{ a.numero }}</td>
+              <td class="centro mono">{{ a.codigo }}</td>
+              <td>{{ a.nombre }}</td>
+              {% for letra in a.celdas %}
+                <td class="centro celda-{{ letra|lower|default:'vacia' }}">{{ letra }}</td>
+              {% endfor %}
+              <td class="centro {{ a.semaforo }}">
+                {% if a.porcentaje_asistencia is not None %}
+                  <strong>{{ a.porcentaje_asistencia|floatformat:0 }}</strong>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tarjeta-pie">
+      <p class="nota sin-margen">
+        <strong>P</strong> presente · <strong>F</strong> falta.
+        Una casilla vacía significa que el alumno todavía no estaba
+        matriculado cuando se dictó esa clase.
+      </p>
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}

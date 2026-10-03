@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load l10n %}
+
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <div>
+    <a href="{% url 'cursos' %}" class="volver">← Mis cursos</a>
+    <h1>Estudiantes matriculados</h1>
+    <p>{{ grupo.curso.codigo }} · {{ grupo.nombre }} — {{ grupo.curso.nombre }}</p>
+  </div>
+  <div class="derecha">
+    {% if user.es_admin %}
+      <button type="button" class="boton boton-primario" id="btn-matricular">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Agregar estudiantes
+      </button>
+    {% endif %}
+    {% if es_titular %}
+      <a href="{% url 'asistencia' grupo.id_grupo %}" class="boton boton-claro">Llamar asistencia</a>
+    {% else %}
+      <a href="{% url 'historial' grupo.id_grupo %}" class="boton boton-claro">Historial</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if user.es_admin %}
+<!-- Alta y matrícula (solo administrador) -->
+<div class="tarjeta oculto" id="panel-matricular" style="margin-bottom:16px">
+  <div class="tarjeta-cabecera">
+    <h2>Agregar estudiantes al curso</h2>
+    <div class="derecha">
+      <button type="button" class="boton boton-claro boton-chico" id="btn-cancelar-matricular">Cerrar</button>
+    </div>
+  </div>
+
+  <div class="pestanas" role="tablist">
+    <button type="button" class="pestana activa" role="tab" data-panel="panel-nuevos" aria-selected="true">
+      Registrar estudiantes nuevos
+    </button>
+    <button type="button" class="pestana" role="tab" data-panel="panel-existentes" aria-selected="false">
+      Ya están en la base
+    </button>
+  </div>
+
+  <!-- Alta + matrícula en un solo paso -->
+  <form method="post" action="{% url 'importar-estudiantes' grupo.id_grupo %}"
+        class="tarjeta-cuerpo" id="panel-nuevos" role="tabpanel">
+    {% csrf_token %}
+    <div class="campo-grupo">
+      <label class="etiqueta" for="lista">Lista del aula</label>
+      <p class="nota" style="margin:0 0 7px">
+        Un estudiante por línea, con este orden:<br>
+        <span class="mono">CÓDIGO;APELLIDO PATERNO;APELLIDO MATERNO;NOMBRES</span>
+      </p>
+      <textarea class="campo" id="lista" name="lista" rows="8" spellcheck="false"></textarea>
+      <p class="nota" style="margin:6px 0 0">
+        El correo al final es opcional. Puedes pegar directamente desde Excel
+        (las columnas llegan separadas por tabulador). Los estudiantes se
+        registran en la escuela <strong>{{ grupo.curso.escuela.nombre }}</strong>
+        y quedan matriculados en este curso. Si un código ya existe, se respeta
+        su ficha y solo se le matricula.
+      </p>
+    </div>
+    <div class="pila">
+      <button type="submit" class="boton boton-primario">Registrar y matricular</button>
+    </div>
+  </form>
+
+  <!-- Matrícula por código, para quien ya está en la base -->
+  <form method="post" action="{% url 'matricular' grupo.id_grupo %}"
+        class="tarjeta-cuerpo oculto" id="panel-existentes" role="tabpanel">
+    {% csrf_token %}
+    <div class="campo-grupo">
+      <label class="etiqueta" for="codigos">Códigos de los estudiantes</label>
+      <p class="nota" style="margin:0 0 7px">
+        Un código por línea, o separados por coma.
+      </p>
+      <textarea class="campo" id="codigos" name="codigos" rows="5" spellcheck="false"></textarea>
+      <p class="nota" style="margin:6px 0 0">
+        Solo matricula a quien ya está registrado. Los códigos que no existan
+        se te informarán al guardar; para esos usa la otra pestaña.
+      </p>
+    </div>
+    <div class="pila">
+      <button type="submit" class="boton boton-primario">Matricular</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<div class="tarjeta">
+  <div class="cabecera-oficial">
+    <strong>UNIVERSIDAD NACIONAL DEL ALTIPLANO PUNO</strong>
+    <span>RESUMEN DE CURSOS POR GRUPO — ESTUDIANTES[{{ grupo.periodo.codigo }}]</span>
+  </div>
+
+  <dl class="datos-curso">
+    <div><dt>Facultad:</dt><dd>{{ grupo.curso.escuela.facultad.nombre }}</dd></div>
+    <div><dt>Escuela:</dt><dd>{{ grupo.curso.escuela.nombre }}</dd></div>
+    <div><dt>Curso:</dt><dd>{{ grupo.curso.codigo }} - {{ grupo.curso.nombre }}</dd></div>
+    <div><dt>Docente:</dt><dd>{{ grupo.docente.nombre_completo }}</dd></div>
+    <div style="grid-column:1/-1">
+      <dt>Semestre:</dt>
+      <dd>{{ grupo.curso.semestre_texto }} · Créditos: {{ grupo.curso.creditos }} · Grupo: {{ grupo.nombre }}</dd>
+    </div>
+  </dl>
+
+  <div class="tabla-envoltorio">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th class="centro">N°</th>
+          <th class="centro">Código</th>
+          <th>Apellidos y nombres</th>
+          <th class="centro">Intento</th>
+          <th class="centro">Matrícula</th>
+          {% if user.es_admin %}<th class="centro"></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in alumnos %}
+          <tr>
+            <td class="centro">{{ a.numero }}</td>
+            <td class="centro mono">{{ a.codigo }}</td>
+            <td>{{ a.nombre }}</td>
+            <td class="centro">{{ a.intento }}</td>
+            <td class="centro">
+              {% if a.estado_matricula == 'ACTIVA' %}
+                <span class="insignia ins-verde">Activa</span>
+              {% else %}
+                <span class="insignia ins-gris">Retirada</span>
+              {% endif %}
+            </td>
+            {% if user.es_admin %}
+              <td class="centro">
+                <form method="post" action="{% url 'quitar-matricula' grupo.id_grupo a.id_matricula %}"
+                      data-confirmar="¿Quitar a {{ a.nombre }} de este curso?">
+                  {% csrf_token %}
+                  <button type="submit" class="boton boton-claro boton-chico"
+                          style="color:var(--falta)" title="Quitar del curso">Quitar</button>
+                </form>
+              </td>
+            {% endif %}
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="centro nota" style="padding:28px">
+              Este curso todavía no tiene estudiantes.
+              {% if user.es_admin %}
+                Usa «Agregar estudiantes» para registrarlos y matricularlos.
+              {% else %}
+                Pide al administrador que matricule la lista.
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tarjeta-pie">
+    <p class="nota sin-margen">Total: {{ alumnos|length }} estudiantes.</p>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+{% if user.es_admin %}
+{# El panel de alta y matrícula solo existe para el administrador. #}
+<script nonce="{{ csp_nonce }}">
+(function () {
+  var panel = document.getElementById('panel-matricular');
+
+  function abrir(mostrar) {
+    panel.classList.toggle('oculto', !mostrar);
+    if (mostrar) document.getElementById('lista').focus();
+  }
+
+  document.getElementById('btn-matricular').addEventListener('click', function () {
+    abrir(panel.classList.contains('oculto'));
+  });
+  document.getElementById('btn-cancelar-matricular').addEventListener('click', function () {
+    abrir(false);
+  });
+
+  // Pestañas: registrar nuevos / matricular existentes.
+  var pestanas = panel.querySelectorAll('.pestana');
+  pestanas.forEach(function (pestana) {
+    pestana.addEventListener('click', function () {
+      pestanas.forEach(function (otra) {
+        var activa = otra === pestana;
+        otra.classList.toggle('activa', activa);
+        otra.setAttribute('aria-selected', String(activa));
+        document.getElementById(otra.dataset.panel).classList.toggle('oculto', !activa);
+      });
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

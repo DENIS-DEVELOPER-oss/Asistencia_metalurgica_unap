@@ -1,0 +1,191 @@
+{% load static %}<!doctype html>
+<html lang="es-PE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#14305c">
+  <title>{% block titulo %}{{ titulo|default:"Asistencia" }}{% endblock %} · Asistencia UNAP</title>
+  <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+  <script nonce="{{ csp_nonce }}">
+    /* Aplica el tema guardado antes de pintar, para que no parpadee. */
+    try {
+      var t = localStorage.getItem('unap-tema');
+      if (t === 'oscuro') document.documentElement.setAttribute('data-tema', 'oscuro');
+    } catch (e) {}
+  </script>
+</head>
+<body>
+<div class="app">
+
+  <!-- ------------------------------ Barra lateral ------------------------------ -->
+  <aside class="barra-lateral">
+    <a href="{% url 'cursos' %}" class="marca-lateral">
+      <img class="escudo-nav" src="{% static 'img/escudo.png' %}"
+           alt="" width="40" height="40">
+      <span class="nombre-nav">ASISTENCIA<small>Altiplano Puno</small></span>
+    </a>
+
+    <nav class="nav-lateral" aria-label="Menú principal">
+      <a href="{% url 'cursos' %}" class="{% if seccion == 'cursos' %}activo{% endif %}">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+        <span>{% if user.es_admin %}Todos los grupos{% else %}Mis cursos{% endif %}</span>
+      </a>
+
+      {% if grupo %}
+        {% comment %}
+          Las acciones del curso van enmarcadas en dorado: dentro de un
+          curso, lo dorado es del curso y lo azul es del sistema.
+        {% endcomment %}
+        <div class="bloque-curso">
+          <span class="titulo-nav" title="{{ grupo.curso.nombre }}">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            {{ grupo.curso.codigo }} · {{ grupo.nombre }}
+          </span>
+
+          {% if es_titular %}
+            <a href="{% url 'asistencia' grupo.id_grupo %}"
+               class="{% if seccion == 'asistencia' %}activo{% endif %}">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 5-6"/><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
+              <span>Llamar asistencia</span>
+            </a>
+          {% endif %}
+
+          <a href="{% url 'historial' grupo.id_grupo %}"
+             class="{% if seccion == 'historial' %}activo{% endif %}">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+            <span>Historial de clases</span>
+          </a>
+
+          <a href="{% url 'reporte' grupo.id_grupo %}"
+             class="{% if seccion == 'reporte' %}activo{% endif %}">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+            <span>Reporte</span>
+          </a>
+
+          <a href="{% url 'matriculados' grupo.id_grupo %}">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/></svg>
+            <span>Estudiantes</span>
+          </a>
+        </div>
+      {% endif %}
+
+      <span class="separador"></span>
+
+      {% if user.es_admin %}
+        <a href="{% url 'admin-panel' %}" class="{% if seccion == 'admin' %}activo{% endif %}">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 3.7 7.9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V2a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H22a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1.6z"/></svg>
+          <span>Administración</span>
+        </a>
+
+        <a href="{% url 'seguridad' %}" class="{% if seccion == 'seguridad' %}activo{% endif %}">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          <span>Seguridad</span>
+        </a>
+      {% endif %}
+
+      <a href="{% url 'cambiar-clave' %}">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.2-8.2 2 2-1.5 1.5 1.5 1.5-2.5 2.5-1.5-1.5-2.5 2.5"/></svg>
+        <span>Mi contraseña</span>
+      </a>
+
+      {% comment %}
+        Se cierra con POST, no con un enlace: si bastara con abrir la
+        dirección, una página ajena echaría al docente a mitad del llamado
+        de asistencia con un <img src="/salir/">.
+      {% endcomment %}
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="salir-nav">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/><path d="M12 2v10"/></svg>
+          <span>Cerrar sesión</span>
+        </button>
+      </form>
+    </nav>
+
+    <div class="pie-lateral">UNAP · {{ user.nombre_completo }}</div>
+  </aside>
+
+  <!-- -------------------------------- Contenido -------------------------------- -->
+  <div class="contenido">
+
+    <header class="barra-superior">
+      <a href="{% url 'cursos' %}" class="logo">
+        <img class="arroba" src="{% static 'img/escudo.png' %}"
+             alt="" width="30" height="30">
+        <span class="texto">ASISTENCIA</span>
+      </a>
+
+
+
+      <div class="acciones-superior">
+        <button type="button" class="boton-icono" id="btn-tema" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
+          <svg id="icono-luna" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          <svg id="icono-sol" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+
+        <div class="quien-soy" title="{{ user.nombre_completo }} · {{ user.username }}">
+          <span class="iniciales" aria-hidden="true">{{ user.iniciales }}</span>
+          <span class="quien">
+            <strong>{{ user.nombre_completo }}</strong>
+            <small>{{ user.get_rol_display }}</small>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="pagina">
+      {% if messages %}
+        <div class="mensajes">
+          {% for mensaje in messages %}
+            <div class="mensaje {{ mensaje.tags }}">{{ mensaje }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block contenido %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce }}">
+  // ------------------------------ Tema claro / oscuro
+  (function () {
+    var raiz = document.documentElement;
+    var boton = document.getElementById('btn-tema');
+    var luna = document.getElementById('icono-luna');
+    var sol = document.getElementById('icono-sol');
+
+    function pintar() {
+      var oscuro = raiz.getAttribute('data-tema') === 'oscuro';
+      luna.hidden = oscuro;
+      sol.hidden = !oscuro;
+    }
+    pintar();
+
+    boton.addEventListener('click', function () {
+      var oscuro = raiz.getAttribute('data-tema') === 'oscuro';
+      if (oscuro) raiz.removeAttribute('data-tema');
+      else raiz.setAttribute('data-tema', 'oscuro');
+      try { localStorage.setItem('unap-tema', oscuro ? 'claro' : 'oscuro'); } catch (e) {}
+      pintar();
+    });
+  })();
+
+  // ------------------------------ Confirmar antes de borrar
+  // La pregunta va en `data-confirmar` y no en un `onsubmit=` dentro del
+  // HTML: la politica de contenido (ver config/middleware.py) solo deja
+  // correr el codigo de este bloque, que lleva el numero de un solo uso
+  // de la peticion. Asi, si algun dia se colara texto de un formulario en
+  // la pagina, el navegador no ejecutaria lo que trajera.
+  document.addEventListener('submit', function (evento) {
+    var pregunta = evento.target.getAttribute('data-confirmar');
+    if (pregunta && !confirm(pregunta)) evento.preventDefault();
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,665 @@
+{% extends "base.html" %}
+{% load l10n %}
+
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <div>
+    <a href="{% url 'cursos' %}" class="volver">← Mis cursos</a>
+    <h1>Administración</h1>
+    <p>Gestión de docentes, contraseñas y asignación de grupos</p>
+  </div>
+  <div class="derecha">
+    <a href="{% url 'seguridad' %}" class="boton boton-claro">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      Registro de seguridad
+    </a>
+  </div>
+</div>
+
+<div class="rejilla tres" style="margin-bottom:18px">
+  <div class="indicador">
+    <span class="icono fondo-marino">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </span>
+    <div><div class="valor">{{ docentes|length }}</div><div class="etiqueta">Docentes</div></div>
+  </div>
+  <div class="indicador">
+    <span class="icono fondo-indigo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    </span>
+    <div><div class="valor">{{ grupos|length }}</div><div class="etiqueta">Grupos</div></div>
+  </div>
+  <div class="indicador">
+    <span class="icono {% if sin_clave or claves_de_reparto %}fondo-ambar{% else %}fondo-presente{% endif %}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.2-8.2 2 2-1.5 1.5 1.5 1.5-2.5 2.5-1.5-1.5-2.5 2.5"/></svg>
+    </span>
+    <div>
+      {% comment %}
+        Las dos cosas que quedan por atender en las contraseñas: las que
+        nadie definió y las que definiste tú y su dueño aún no cambió.
+      {% endcomment %}
+      <div class="valor {% if sin_clave or claves_de_reparto %}ambar{% endif %}">
+        {{ sin_clave|add:claves_de_reparto }}
+      </div>
+      <div class="etiqueta">
+        {% if claves_de_reparto and sin_clave %}
+          Sin contraseña o sin cambiar
+        {% elif claves_de_reparto %}
+          Contraseñas sin cambiar
+        {% else %}
+          Sin contraseña
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Secciones de administración -->
+<div class="pestanas pestanas-admin" role="tablist">
+<button type="button" class="pestana activa" role="tab" aria-selected="true"
+          data-panel="seccion-cursos" data-nombre="cursos">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    Cursos <small>{{ cursos|length }}</small>
+  </button>
+<button type="button" class="pestana" role="tab" aria-selected="false"
+          data-panel="seccion-docentes" data-nombre="docentes">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/></svg>
+    Docentes <small>{{ docentes|length }}</small>
+  </button>
+<button type="button" class="pestana" role="tab" aria-selected="false"
+          data-panel="seccion-periodos" data-nombre="periodos">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+    Periodos <small>{{ periodos|length }}</small>
+  </button>
+</div>
+
+<div id="seccion-cursos" role="tabpanel">
+  <!-- Cursos -->
+  <div class="tarjeta">
+    <div class="tarjeta-cabecera">
+      <h2>Cursos y docente asignado</h2>
+      <div class="derecha">
+        <button type="button" class="boton boton-primario boton-chico" id="btn-nuevo-curso">
+          + Nuevo curso
+        </button>
+      </div>
+    </div>
+
+    <!-- Alta de curso -->
+    <form method="post" action="{% url 'crear-curso' %}" class="tarjeta-cuerpo oculto"
+          id="panel-nuevo-curso" style="border-bottom:1px solid var(--borde-suave)">
+      {% csrf_token %}
+      <h3 style="font-size:14px;margin-bottom:12px">Registrar un curso nuevo</h3>
+
+      <div class="fila-campos">
+        <div class="campo-grupo">
+          <label class="etiqueta" for="c-codigo">Código *</label>
+          <input class="campo" type="text" id="c-codigo" name="codigo" maxlength="15" required>
+          <p class="nota" style="margin:5px 0 0">Como aparece en el plan de estudios.</p>
+        </div>
+        <div class="campo-grupo" style="grid-column:span 2">
+          <label class="etiqueta" for="c-nombre">Nombre del curso *</label>
+          <input class="campo" type="text" id="c-nombre" name="nombre" maxlength="150" required>
+        </div>
+      </div>
+
+      <div class="fila-campos">
+        <div class="campo-grupo">
+          <label class="etiqueta" for="c-grupo">Sección / grupo</label>
+          <input class="campo" type="text" id="c-grupo" name="grupo" maxlength="20"
+                 value="GRUPO A">
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="c-creditos">Créditos *</label>
+          <input class="campo" type="number" id="c-creditos" name="creditos"
+                 step="0.5" min="0.5" max="20" value="3" required>
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="c-semestre">Semestre *</label>
+          <select class="campo" id="c-semestre" name="semestre">
+            {% for n, txt in semestres %}
+              <option value="{{ n }}">{{ txt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="fila-campos">
+        <div class="campo-grupo">
+          <label class="etiqueta" for="c-escuela">Escuela profesional</label>
+          <select class="campo" id="c-escuela" name="id_escuela">
+            {% for e in escuelas %}
+              <option value="{{ e.id_escuela }}">{{ e.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="c-periodo">Periodo</label>
+          <select class="campo" id="c-periodo" name="id_periodo">
+            {% for p in periodos %}
+              <option value="{{ p.id_periodo }}" {% if p.activo %}selected{% endif %}>{{ p.codigo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="c-docente">Docente que lo dicta *</label>
+          <select class="campo" id="c-docente" name="id_docente">
+            {% for d in docentes %}
+              <option value="{{ d.obj.id_docente }}">{{ d.obj.nombre_completo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <p class="nota" style="margin:2px 0 12px">
+        El curso nace sin estudiantes. Al crearlo te llevo a la pantalla de
+        matrícula para que agregues la lista.
+      </p>
+
+      <div class="pila">
+        <button type="submit" class="boton boton-primario">Crear curso</button>
+        <button type="button" class="boton boton-claro" id="btn-cancelar-curso">Cancelar</button>
+      </div>
+    </form>
+
+    <div class="tabla-envoltorio">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th class="centro">Código</th>
+            <th>Curso</th>
+            <th class="centro">Grupo</th>
+            <th class="centro">Periodo</th>
+            <th class="centro">Alumnos</th>
+            <th class="centro">Clases</th>
+            <th>Docente</th>
+            <th class="centro"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in cursos %}
+            <tr>
+              <td class="centro mono">{{ c.grupo.curso.codigo }}</td>
+              <td>
+                <strong>{{ c.grupo.curso.nombre }}</strong>
+                <div class="nota">
+                  {{ c.grupo.curso.semestre_texto }} ·
+                  {{ c.grupo.curso.creditos }} créditos ·
+                  {{ c.grupo.curso.escuela.nombre }}
+                </div>
+              </td>
+              <td class="centro">{{ c.grupo.nombre }}</td>
+              <td class="centro mono">{{ c.grupo.periodo.codigo }}</td>
+              <td class="centro">
+                <a href="{% url 'matriculados' c.grupo.id_grupo %}">{{ c.alumnos }}</a>
+              </td>
+              <td class="centro">{{ c.clases }}</td>
+              <td>
+                <form method="post" action="{% url 'admin-asignar-docente' c.grupo.id_grupo %}"
+                      class="pila" style="flex-wrap:nowrap;gap:5px">
+                  {% csrf_token %}
+                  <select class="campo" name="id_docente"
+                          aria-label="Docente de {{ c.grupo.curso.codigo }} · {{ c.grupo.nombre }}"
+                          style="min-width:175px;font-size:12.5px;padding:6px 9px">
+                    {% for d in docentes %}
+                      <option value="{{ d.obj.id_docente }}"
+                              {% if d.obj.id_docente == c.grupo.docente_id %}selected{% endif %}>
+                        {{ d.obj.nombre_completo }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="boton boton-claro boton-chico">Asignar</button>
+                </form>
+              </td>
+              <td class="centro">
+                <div class="acciones-fila" style="justify-content:center">
+                  <button type="button" class="boton boton-claro boton-chico btn-editar-curso"
+                          data-fila="editar-{{ c.grupo.id_grupo }}">Editar</button>
+                  <form method="post" action="{% url 'eliminar-curso' c.grupo.id_grupo %}"
+                        data-confirmar="¿Eliminar «{{ c.grupo.curso.codigo }} · {{ c.grupo.nombre }}»?&#10;&#10;Se borrarán {{ c.alumnos }} matrícula(s){% if c.clases %} y {{ c.clases }} clase(s) con toda su asistencia{% endif %}.&#10;&#10;Esto no se puede deshacer.">
+                    {% csrf_token %}
+                    <button type="submit" class="boton boton-claro boton-chico"
+                            style="color:var(--falta)"
+                            {% if c.clases %}title="Se perderán {{ c.clases }} clases registradas"{% endif %}>
+                      Eliminar{% if c.clases %} ⚠{% endif %}
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Edición del curso, plegada bajo su fila -->
+            <tr id="editar-{{ c.grupo.id_grupo }}" class="oculto fila-edicion">
+              <td colspan="8">
+                <form method="post" action="{% url 'editar-curso' c.grupo.id_grupo %}">
+                  {% csrf_token %}
+                  <div class="fila-campos">
+                    <div class="campo-grupo">
+                      <label class="etiqueta" for="ec-codigo-{{ c.grupo.id_grupo }}">Código</label>
+                      <input class="campo" type="text" name="codigo" id="ec-codigo-{{ c.grupo.id_grupo }}" maxlength="15"
+                             value="{{ c.grupo.curso.codigo }}" required>
+                    </div>
+                    <div class="campo-grupo" style="grid-column:span 2">
+                      <label class="etiqueta" for="ec-nombre-{{ c.grupo.id_grupo }}">Nombre del curso</label>
+                      <input class="campo" type="text" name="nombre" id="ec-nombre-{{ c.grupo.id_grupo }}" maxlength="150"
+                             value="{{ c.grupo.curso.nombre }}" required>
+                    </div>
+                  </div>
+                  <div class="fila-campos">
+                    <div class="campo-grupo">
+                      <label class="etiqueta" for="ec-grupo-{{ c.grupo.id_grupo }}">Sección</label>
+                      <input class="campo" type="text" name="grupo" id="ec-grupo-{{ c.grupo.id_grupo }}" maxlength="20"
+                             value="{{ c.grupo.nombre }}" required>
+                    </div>
+                    <div class="campo-grupo">
+                      <label class="etiqueta" for="ec-creditos-{{ c.grupo.id_grupo }}">Créditos</label>
+                      <input class="campo" type="number" name="creditos" id="ec-creditos-{{ c.grupo.id_grupo }}" step="0.5" min="0.5" max="20"
+                             value="{{ c.grupo.curso.creditos|unlocalize }}" required>
+                    </div>
+                    <div class="campo-grupo">
+                      <label class="etiqueta" for="ec-semestre-{{ c.grupo.id_grupo }}">Semestre</label>
+                      <select class="campo" name="semestre" id="ec-semestre-{{ c.grupo.id_grupo }}">
+                        {% for n, txt in semestres %}
+                          <option value="{{ n }}" {% if c.grupo.curso.semestre == n %}selected{% endif %}>{{ txt }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                  <div class="pila">
+                    <button type="submit" class="boton boton-primario boton-chico">Guardar cambios</button>
+                    <button type="button" class="boton boton-claro boton-chico btn-cancelar-edicion"
+                            data-fila="editar-{{ c.grupo.id_grupo }}">Cancelar</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="centro nota" style="padding:28px">
+              Todavía no hay cursos. Pulsa «Nuevo curso» para crear el primero.
+            </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tarjeta-pie">
+      <p class="nota sin-margen">
+        Eliminar un curso borra también sus matrículas y, si las tiene, sus
+        clases dictadas con toda la asistencia: el aviso ⚠ marca esos casos.
+        Al reasignar el docente, en cambio, las clases ya dictadas conservan
+        a quien las dictó.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div id="seccion-docentes" role="tabpanel" class="oculto">
+  <!-- Docentes -->
+  <div class="tarjeta">
+    <div class="tarjeta-cabecera">
+      <h2>Docentes registrados</h2>
+      <div class="derecha">
+        <button type="button" class="boton boton-primario boton-chico" id="btn-nuevo">
+          + Nuevo docente
+        </button>
+      </div>
+    </div>
+
+    <!-- Alta de docente -->
+    <form method="post" action="{% url 'admin-crear-docente' %}" class="tarjeta-cuerpo oculto" id="form-nuevo"
+          style="border-bottom:1px solid var(--borde-suave)">
+      {% csrf_token %}
+      <h3 style="font-size:14px;margin-bottom:12px">Registrar nuevo docente</h3>
+      <div class="fila-campos">
+        <div class="campo-grupo">
+          <label class="etiqueta" for="n-apellidos">Apellidos *</label>
+          <input class="campo" type="text" id="n-apellidos" name="apellidos" maxlength="100" required>
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="n-nombres">Nombres *</label>
+          <input class="campo" type="text" id="n-nombres" name="nombres" maxlength="100" required>
+        </div>
+      </div>
+      <div class="fila-campos">
+        <div class="campo-grupo">
+          <label class="etiqueta" for="n-dni">DNI</label>
+          <input class="campo" type="text" id="n-dni" name="dni" maxlength="8">
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="n-username">Usuario *</label>
+          <input class="campo" type="text" id="n-username" name="username" maxlength="50"
+                 autocapitalize="none" spellcheck="false" required>
+          <p class="nota" style="margin:5px 0 0">Su DNI, su correo o un nombre corto.</p>
+        </div>
+      </div>
+      <div class="fila-campos">
+        <div class="campo-grupo">
+          <label class="etiqueta" for="n-email">Correo</label>
+          <input class="campo" type="email" id="n-email" name="email" maxlength="120">
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="n-password">Contraseña inicial</label>
+          <input class="campo" type="text" id="n-password" name="password">
+          <p class="nota" style="margin:5px 0 0">Si la dejas vacía, la cuenta queda pendiente de clave.</p>
+        </div>
+      </div>
+      <div class="pila" style="margin-top:6px">
+        <button type="submit" class="boton boton-primario">Registrar docente</button>
+        <button type="button" class="boton boton-claro" id="btn-cancelar-nuevo">Cancelar</button>
+      </div>
+    </form>
+
+    <div class="tabla-envoltorio">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Docente</th>
+            <th class="centro">Cursos</th>
+            <th class="centro">Acceso</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in docentes %}
+            <tr>
+              <td>
+                <strong>{{ d.obj.nombre_completo }}</strong>
+                {% if not d.obj.activo %}<span class="insignia ins-gris">Inactivo</span>{% endif %}
+                <div class="nota">
+                  {% if d.username %}<span class="mono">{{ d.username }}</span>{% else %}sin cuenta de acceso{% endif %}
+                  {% if d.obj.dni %} · DNI {{ d.obj.dni }}{% endif %}
+                  {% if d.obj.email %} · {{ d.obj.email }}{% endif %}
+                </div>
+              </td>
+              <td class="centro"><strong>{{ d.n_grupos }}</strong></td>
+              <td class="centro">
+                {% if not d.username %}
+                  <span class="insignia ins-gris">—</span>
+                {% elif d.clave_pendiente %}
+                  {# Entró (o entrará) con la clave que le pusiste; el
+                     sistema le pedirá la suya y esto pasará a «Propia». #}
+                  <span class="insignia ins-ambar"
+                        title="Sigue con la contraseña que le asignaste. Al entrar, el sistema le pedirá que elija una propia.">
+                    Sin cambiar
+                  </span>
+                {% elif d.tiene_clave %}
+                  <span class="insignia ins-verde">Propia</span>
+                {% else %}
+                  <span class="insignia ins-ambar">Sin definir</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="acciones-fila">
+                  <button type="button" class="boton boton-claro boton-chico btn-editar-docente"
+                          data-fila="editar-docente-{{ d.obj.id_docente }}">Editar</button>
+
+                  {% if d.username %}
+                    <form method="post" action="{% url 'admin-clave' d.obj.id_docente %}" class="pila" style="flex-wrap:nowrap;gap:5px">
+                      {% csrf_token %}
+                      <label class="etiqueta sin-margen" for="clave-{{ d.obj.id_docente }}">Nueva clave</label>
+                      <input class="campo" type="text" name="password" required
+                             id="clave-{{ d.obj.id_docente }}"
+                             style="width:118px;font-size:12.5px;padding:6px 9px">
+                      <button type="submit" class="boton boton-claro boton-chico">Guardar</button>
+                    </form>
+                  {% endif %}
+
+                  {% if d.se_puede_borrar %}
+                    <form method="post" action="{% url 'admin-eliminar-docente' d.obj.id_docente %}"
+                          data-confirmar="¿Eliminar a {{ d.obj.nombre_completo }}?&#10;&#10;Se borrará también su cuenta de acceso. Esta acción no se puede deshacer.">
+                      {% csrf_token %}
+                      <button type="submit" class="boton boton-claro boton-chico"
+                              style="color:var(--falta)">Eliminar</button>
+                    </form>
+                  {% else %}
+                    <span class="nota" title="{% if d.n_grupos %}Reasigna sus cursos antes de eliminarlo{% elif d.tiene_clases %}Dictó clases registradas{% else %}Es tu propia ficha{% endif %}">
+                      no se puede eliminar:
+                      {% if d.n_grupos %}tiene cursos
+                      {% elif d.tiene_clases %}tiene historial
+                      {% else %}eres tú{% endif %}
+                    </span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+
+            <!-- Edición del docente, plegada bajo su fila -->
+            <tr id="editar-docente-{{ d.obj.id_docente }}" class="oculto fila-edicion">
+              <td colspan="4">
+                <form method="post" action="{% url 'admin-editar-docente' d.obj.id_docente %}">
+                  {% csrf_token %}
+                  <div class="fila-campos">
+                    <div class="campo-grupo">
+                      <label class="etiqueta" for="ed-apellidos-{{ d.obj.id_docente }}">Apellidos *</label>
+                      <input class="campo" type="text" name="apellidos" id="ed-apellidos-{{ d.obj.id_docente }}"
+                             value="{{ d.obj.apellidos }}" maxlength="100" required>
+                    </div>
+                    <div class="campo-grupo">
+                      <label class="etiqueta" for="ed-nombres-{{ d.obj.id_docente }}">Nombres *</label>
+                      <input class="campo" type="text" name="nombres" id="ed-nombres-{{ d.obj.id_docente }}"
+                             value="{{ d.obj.nombres }}" maxlength="100" required>
+                    </div>
+                  </div>
+                  <div class="fila-campos">
+                    <div class="campo-grupo">
+                      <label class="etiqueta" for="ed-username-{{ d.obj.id_docente }}">Usuario con el que entra</label>
+                      {% if d.username %}
+                        <input class="campo" type="text" name="username"
+                               id="ed-username-{{ d.obj.id_docente }}"
+                               value="{{ d.username }}" maxlength="50"
+                               autocapitalize="none" spellcheck="false">
+                      {% else %}
+                        <input class="campo" type="text" value="Sin cuenta de acceso" disabled>
+                      {% endif %}
+                    </div>
+                    <div class="campo-grupo">
+                      <label class="etiqueta" for="ed-dni-{{ d.obj.id_docente }}">DNI</label>
+                      <input class="campo" type="text" name="dni" id="ed-dni-{{ d.obj.id_docente }}"
+                             value="{{ d.obj.dni|default:'' }}" maxlength="8">
+                    </div>
+                    <div class="campo-grupo">
+                      <label class="etiqueta" for="ed-email-{{ d.obj.id_docente }}">Correo</label>
+                      <input class="campo" type="email" name="email" id="ed-email-{{ d.obj.id_docente }}"
+                             value="{{ d.obj.email|default:'' }}" maxlength="120">
+                    </div>
+                  </div>
+                  <div class="pila">
+                    <button type="submit" class="boton boton-primario boton-chico">Guardar cambios</button>
+                    <button type="button" class="boton boton-claro boton-chico btn-cancelar-docente"
+                            data-fila="editar-docente-{{ d.obj.id_docente }}">Cancelar</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="centro nota" style="padding:28px">No hay docentes registrados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+<div class="tarjeta-pie">
+      <p class="nota sin-margen">
+        «Editar» cambia los datos y el usuario con el que entra; el campo de la
+        derecha asigna una contraseña nueva. Un docente solo se puede eliminar
+        si no tiene cursos asignados ni clases dictadas: su nombre queda en el
+        registro oficial de las clases que dictó.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div id="seccion-periodos" role="tabpanel" class="oculto">
+  <!-- Periodos académicos -->
+  <div class="tarjeta">
+    <div class="tarjeta-cabecera">
+      <h2>Periodos académicos</h2>
+      <div class="derecha">
+        <button type="button" class="boton boton-primario boton-chico" id="btn-nuevo-periodo">
+          + Nuevo periodo
+        </button>
+      </div>
+    </div>
+
+    <form method="post" action="{% url 'admin-crear-periodo' %}" class="tarjeta-cuerpo oculto"
+          id="form-periodo" style="border-bottom:1px solid var(--borde-suave)">
+      {% csrf_token %}
+      <h3 style="font-size:14px;margin-bottom:12px">Registrar nuevo periodo</h3>
+      <div class="fila-campos">
+        <div class="campo-grupo">
+          <label class="etiqueta" for="p-codigo">Código *</label>
+          <input class="campo" type="text" id="p-codigo" name="codigo" maxlength="10" required>
+          <p class="nota" style="margin:5px 0 0">Por ejemplo 2026-II.</p>
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="p-inicio">Inicio de clases</label>
+          <input class="campo" type="date" id="p-inicio" name="fecha_inicio">
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="p-fin">Fin de clases</label>
+          <input class="campo" type="date" id="p-fin" name="fecha_fin">
+        </div>
+      </div>
+      <label class="etiqueta" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <input type="checkbox" name="activo" value="1" checked>
+        Es el periodo en curso
+      </label>
+      <div class="pila">
+        <button type="submit" class="boton boton-primario">Registrar periodo</button>
+        <button type="button" class="boton boton-claro" id="btn-cancelar-periodo">Cancelar</button>
+      </div>
+    </form>
+
+    <div class="tabla-envoltorio">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th class="centro">Código</th>
+            <th class="centro">Inicio</th>
+            <th class="centro">Fin</th>
+            <th class="centro">Cursos</th>
+            <th class="centro">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in periodos %}
+            <tr>
+              <td class="centro mono"><strong>{{ p.codigo }}</strong></td>
+              <td class="centro">{{ p.fecha_inicio|date:"d/m/Y"|default:"—" }}</td>
+              <td class="centro">{{ p.fecha_fin|date:"d/m/Y"|default:"—" }}</td>
+              <td class="centro">{{ p.n_grupos }}</td>
+              <td class="centro">
+                {% if p.activo %}
+                  <span class="insignia ins-verde">En curso</span>
+                {% else %}
+                  <span class="insignia ins-gris">Cerrado</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="centro nota" style="padding:28px">
+              No hay periodos registrados. Crea uno para poder abrir cursos.
+            </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tarjeta-pie">
+      <p class="nota sin-margen">
+        Los cursos se abren dentro de un periodo. Un periodo con cursos no se
+        puede borrar desde aquí.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+  (function () {
+    var form = document.getElementById('form-nuevo');
+    document.getElementById('btn-nuevo').addEventListener('click', function () {
+      form.classList.toggle('oculto');
+      if (!form.classList.contains('oculto')) document.getElementById('n-apellidos').focus();
+    });
+    document.getElementById('btn-cancelar-nuevo').addEventListener('click', function () {
+      form.classList.add('oculto');
+    });
+
+    var formPeriodo = document.getElementById('form-periodo');
+    document.getElementById('btn-nuevo-periodo').addEventListener('click', function () {
+      formPeriodo.classList.toggle('oculto');
+      if (!formPeriodo.classList.contains('oculto')) document.getElementById('p-codigo').focus();
+    });
+    document.getElementById('btn-cancelar-periodo').addEventListener('click', function () {
+      formPeriodo.classList.add('oculto');
+    });
+  })();
+
+  // ------------------------------ Alta y edición de cursos
+  (function () {
+    var panel = document.getElementById('panel-nuevo-curso');
+    if (!panel) return;
+
+    document.getElementById('btn-nuevo-curso').addEventListener('click', function () {
+      panel.classList.toggle('oculto');
+      if (!panel.classList.contains('oculto')) document.getElementById('c-codigo').focus();
+    });
+    document.getElementById('btn-cancelar-curso').addEventListener('click', function () {
+      panel.classList.add('oculto');
+    });
+
+    // Editar un docente y editar un curso se pliegan igual: un botón abre
+    // la fila de debajo y otro la cierra.
+    function plegable(claseAbre, claseCierra) {
+      document.querySelectorAll('.' + claseAbre).forEach(function (boton) {
+        boton.addEventListener('click', function () {
+          var fila = document.getElementById(boton.dataset.fila);
+          fila.classList.toggle('oculto');
+          if (!fila.classList.contains('oculto')) fila.querySelector('input').focus();
+        });
+      });
+      document.querySelectorAll('.' + claseCierra).forEach(function (boton) {
+        boton.addEventListener('click', function () {
+          document.getElementById(boton.dataset.fila).classList.add('oculto');
+        });
+      });
+    }
+
+    plegable('btn-editar-docente', 'btn-cancelar-docente');
+    plegable('btn-editar-curso', 'btn-cancelar-edicion');
+  })();
+
+  // ------------------------------ Secciones de administración
+  (function () {
+    var pestanas = document.querySelectorAll('.pestanas-admin .pestana');
+
+    function mostrar(nombre, recordar) {
+      var encontrada = false;
+      pestanas.forEach(function (pestana) {
+        var activa = pestana.dataset.nombre === nombre;
+        if (activa) encontrada = true;
+        pestana.classList.toggle('activa', activa);
+        pestana.setAttribute('aria-selected', String(activa));
+        document.getElementById(pestana.dataset.panel).classList.toggle('oculto', !activa);
+      });
+      // La sección queda en la URL: al guardar algo se vuelve a ella en
+      // vez de aterrizar siempre en «Docentes».
+      if (encontrada && recordar) history.replaceState(null, '', '#' + nombre);
+      return encontrada;
+    }
+
+    pestanas.forEach(function (pestana) {
+      pestana.addEventListener('click', function () {
+        mostrar(pestana.dataset.nombre, true);
+      });
+    });
+
+    if (location.hash) mostrar(location.hash.slice(1), false);
+  })();
+</script>
+{% endblock %}

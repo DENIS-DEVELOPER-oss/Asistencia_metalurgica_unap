@@ -1,0 +1,22 @@
+{% load static %}<!doctype html>
+<html lang="es-PE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ codigo }} · Asistencia UNAP</title>
+  <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png">
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+</head>
+<body>
+  <div style="min-height:100vh;display:grid;place-items:center;padding:24px">
+    <div class="tarjeta" style="max-width:440px;width:100%">
+      <div class="vacio">
+        <div class="icono" style="font-size:20px;font-weight:800">{{ codigo }}</div>
+        <h3>{{ titulo }}</h3>
+        <p>{{ mensaje }}</p>
+        <a href="/" class="boton boton-primario">Volver a mis cursos</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

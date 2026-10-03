@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+
+<div class="encabezado-pagina">
+  <div>
+    <a href="{% url 'cursos' %}" class="volver">← Mis cursos</a>
+    <h1>{{ grupo.curso.codigo }} · {{ grupo.nombre }}</h1>
+    <p>{{ grupo.curso.nombre }}</p>
+  </div>
+</div>
+
+<div style="max-width:520px">
+  <div class="tarjeta">
+    <div class="tarjeta-cabecera">
+      <h2>Iniciar una nueva clase</h2>
+    </div>
+
+    <form method="post" class="tarjeta-cuerpo">
+      {% csrf_token %}
+
+      <p class="nota" style="margin:0 0 16px">
+        Se creará la lista con los <strong>{{ total_alumnos }}</strong> alumnos matriculados.
+        Todos empiezan como <strong>Falta</strong> y tú vas marcando.
+      </p>
+
+      <div class="fila-campos">
+        <div class="campo-grupo">
+          <label class="etiqueta" for="fecha">Fecha</label>
+          <input class="campo" type="date" id="fecha" name="fecha" value="{{ hoy }}" required>
+        </div>
+        <div class="campo-grupo">
+          <label class="etiqueta" for="hora_inicio">Hora de inicio</label>
+          <input class="campo" type="time" id="hora_inicio" name="hora_inicio" value="{{ hora_actual }}" required>
+        </div>
+      </div>
+
+      <div class="campo-grupo">
+        <label class="etiqueta" for="tema">Tema de la clase (opcional)</label>
+        <input class="campo" type="text" id="tema" name="tema" maxlength="255">
+      </div>
+
+      <button type="submit" class="boton boton-primario boton-ancho" style="margin-top:6px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></svg>
+        Iniciar clase y llamar asistencia
+      </button>
+    </form>
+  </div>
+
+  <p class="texto-centro" style="margin-top:14px">
+    <a href="{% url 'historial' grupo.id_grupo %}">Ver clases anteriores</a>
+  </p>
+</div>
+
+{% endblock %}
