@@ -113,12 +113,22 @@ else
 fi
 
 echo "==> Puerto local"
+PUERTO=""
 if [ -f "$SERVICIO" ]; then
     PUERTO="$(grep -oE '127\.0\.0\.1:[0-9]+' "$SERVICIO" | cut -d: -f2)"
-else
+    # Se conserva solo si esta libre o si lo tiene esta misma app; si lo
+    # tomo otra (MetaFlotPy usa el 8000), se busca otro.
+    PID_NUESTRO="$(systemctl show -p MainPID --value asistencia-unap 2>/dev/null || echo 0)"
+    if escucha "$PUERTO" && ! ss -ltnpH "sport = :$PUERTO" | grep -q "pid=$PID_NUESTRO,"; then
+        PUERTO=""
+    fi
+fi
+if [ -z "$PUERTO" ]; then
     PUERTO=8010
     while escucha "$PUERTO"; do PUERTO=$((PUERTO + 1)); done
 fi
+# El sitio de Nginx ya existente tiene que apuntar al mismo puerto.
+[ -f "$SITIO" ] && sed -i -E "s#proxy_pass http://127\.0\.0\.1:[0-9]+;#proxy_pass http://127.0.0.1:$PUERTO;#" "$SITIO"
 echo "    127.0.0.1:$PUERTO"
 
 echo "==> Configuracion (.env)"
