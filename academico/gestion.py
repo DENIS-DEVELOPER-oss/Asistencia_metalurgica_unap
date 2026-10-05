@@ -20,7 +20,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from asistencia.models import Asistencia, SesionClase
+from asistencia.models import Asistencia, EstadoAsistencia, SesionClase
 from cuentas.models import docente_por_id
 from cuentas.seguridad import Evento, anotar
 
@@ -250,6 +250,56 @@ def eliminar_curso(request, id_grupo):
         detalle += f" y {n_clases} clase{'s' if n_clases != 1 else ''} con su asistencia"
     messages.success(request, f"Curso «{etiqueta}» eliminado, junto con {detalle}.")
     return redirect("cursos")
+
+
+@login_required
+@solo_admin
+@require_POST
+def eliminar_sesion(request, id_sesion):
+    """
+    Elimina una clase con toda su asistencia.
+
+    Es para las clases abiertas por error: una de prueba, la misma clase
+    iniciada dos veces, el curso equivocado. Vale tambien para una cerrada,
+    porque el docente pudo cerrarla sin notar el error. Como una cerrada es
+    parte del registro oficial, el apunte de seguridad guarda lo necesario
+    para saber despues que se borro: curso, fecha, hora, docente, estado y
+    el recuento de presentes y faltas.
+
+    No hay trigger que lo impida: los de `asistencia` vigilan INSERT y
+    UPDATE, no DELETE.
+    """
+    sesion = get_object_or_404(
+        SesionClase.objects.select_related("grupo__curso", "docente"), pk=id_sesion
+    )
+    id_grupo = sesion.grupo_id
+    marcas = Asistencia.objects.filter(sesion_id=sesion.pk)
+    total = marcas.count()
+    presentes = marcas.filter(estado=EstadoAsistencia.PRESENTE).count()
+
+    cuando = f"{sesion.fecha:%d/%m/%Y} {sesion.hora_inicio:%H:%M}"
+    etiqueta = f"{sesion.grupo.curso.codigo} · {sesion.grupo.nombre}"
+
+    with transaction.atomic():
+        # Primero la asistencia, que cuelga de la sesion; igual que al
+        # eliminar un curso, sin fiarse del ON DELETE CASCADE.
+        marcas.delete()
+        sesion.delete()
+
+    anotar(
+        request,
+        Evento.CLASE_ELIMINADA,
+        detalle=(
+            f"{etiqueta}: clase del {cuando} de {sesion.docente.nombre_completo} "
+            f"({sesion.get_estado_display().lower()}, {presentes} P / {total - presentes} F)"
+        ),
+    )
+    messages.success(
+        request,
+        f"Clase del {cuando} eliminada, junto con la asistencia de {total} "
+        f"alumno{'s' if total != 1 else ''}.",
+    )
+    return redirect("historial", id_grupo=id_grupo)
 
 
 

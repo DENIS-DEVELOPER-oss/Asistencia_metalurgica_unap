@@ -44,6 +44,7 @@ class Evento(models.TextChoices):
     CURSO_EDITADO = "CURSO_EDITADO", "Editó un curso"
     CURSO_ELIMINADO = "CURSO_ELIMINADO", "Eliminó un curso"
     DOCENTE_ASIGNADO = "DOCENTE_ASIGNADO", "Asignó un docente a un grupo"
+    CLASE_ELIMINADA = "CLASE_ELIMINADA", "Eliminó una clase"
 
     PERIODO_CREADO = "PERIODO_CREADO", "Creó un periodo"
     ESTUDIANTES = "ESTUDIANTES", "Matriculó estudiantes"
@@ -81,7 +82,7 @@ class EventoSeguridad(models.Model):
             return "ins-ambar"
         if self.tipo in (Evento.LOGIN_OK, Evento.SALIDA):
             return "ins-gris"
-        if "ELIMINADO" in self.tipo or self.tipo == Evento.MATRICULA_QUITADA:
+        if "ELIMINAD" in self.tipo or self.tipo == Evento.MATRICULA_QUITADA:
             return "ins-rojo"
         if "CLAVE" in self.tipo or "USUARIO" in self.tipo:
             return "ins-dorado"

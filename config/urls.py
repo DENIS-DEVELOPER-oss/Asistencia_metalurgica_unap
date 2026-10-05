@@ -38,6 +38,7 @@ urlpatterns = [
     path("grupos/<int:id_grupo>/historial/", asistencia.historial, name="historial"),
     path("sesiones/<int:id_sesion>/", asistencia.sesion_detalle, name="sesion"),
     path("sesiones/<int:id_sesion>/cerrar/", asistencia.cerrar_sesion_vista, name="cerrar-sesion"),
+    path("sesiones/<int:id_sesion>/eliminar/", academico_gestion.eliminar_sesion, name="eliminar-sesion"),
 
     # ----------------------------- Reportes -----------------------------
     path("grupos/<int:id_grupo>/reporte/", reportes.reporte, name="reporte"),

@@ -74,9 +74,21 @@
                 {% endif %}
               </td>
               <td class="centro">
-                <a href="{% url 'sesion' f.sesion.id_sesion %}" class="boton boton-claro boton-chico">
-                  {% if f.sesion.estado == 'CERRADA' %}Ver{% else %}Continuar{% endif %}
-                </a>
+                <div class="acciones-fila" style="justify-content:center">
+                  <a href="{% url 'sesion' f.sesion.id_sesion %}" class="boton boton-claro boton-chico">
+                    {% if f.sesion.estado == 'CERRADA' %}Ver{% else %}Continuar{% endif %}
+                  </a>
+                  {% if user.es_admin %}
+                    <form method="post" action="{% url 'eliminar-sesion' f.sesion.id_sesion %}"
+                          data-confirmar="¿Eliminar la clase del {{ f.sesion.fecha|date:'d/m/Y' }} a las {{ f.sesion.hora_inicio|time:'H:i' }}?&#10;&#10;{% if f.sesion.estado == 'CERRADA' %}Es una clase CERRADA: forma parte del registro oficial del curso.&#10;&#10;{% endif %}Se borrará la asistencia de {{ f.resumen.total }} alumno(s): {{ f.resumen.presentes }} presente(s) y {{ f.resumen.faltas }} falta(s).&#10;&#10;Esto no se puede deshacer.">
+                      {% csrf_token %}
+                      <button type="submit" class="boton boton-claro boton-chico" style="color:var(--falta)"
+                              title="Eliminar esta clase (por ejemplo, si se abrió por error)">
+                        Eliminar{% if f.sesion.estado == 'CERRADA' %} ⚠{% endif %}
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
               </td>
               <td class="centro">
                 <div class="pila" style="justify-content:center;flex-wrap:nowrap;gap:4px">
