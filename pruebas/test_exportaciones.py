@@ -258,3 +258,48 @@ class SinLeyendaNiVicerrectorado(SimpleTestCase):
             libro = load_workbook(io.BytesIO(contenido))
             for hoja in libro.worksheets:
                 self.comprobar(" ".join(celdas_de_la_hoja(hoja)))
+
+
+class ColumnasDeTotalesDelPdf(SimpleTestCase):
+    """«PRES.», «FALT.» y «% ASIST.» se montaban: tenían 7 mm de los tiempos de P/T/F/J."""
+
+    def tablas_del_reporte(self, reporte):
+        from unittest import mock
+
+        import reportes.pdf as pdf
+
+        tablas = []
+        original = pdf.Table
+
+        def registrar(datos, *args, **kwargs):
+            tablas.append((datos, kwargs.get("colWidths")))
+            return original(datos, *args, **kwargs)
+
+        with mock.patch.object(pdf, "Table", registrar):
+            pdf.generar_pdf_reporte(reporte)
+        return [(d, a) for d, a in tablas if d and d[0] and d[0][-1] == "% ASIST."]
+
+    def test_un_ancho_por_columna_y_espacio_para_los_titulos(self):
+        from reportlab.lib.units import mm
+
+        tablas = self.tablas_del_reporte(reporte_de_grupo())
+        self.assertTrue(tablas)
+        for datos, anchos in tablas:
+            self.assertEqual(len(anchos), len(datos[0]))
+            pres, falt, asist = anchos[-3:]
+            self.assertGreaterEqual(pres, 12 * mm)
+            self.assertGreaterEqual(falt, 12 * mm)
+            self.assertGreaterEqual(asist, 16 * mm)
+
+    def test_con_muchas_fechas_la_tabla_cabe_en_la_hoja(self):
+        from reportlab.lib.pagesizes import A4, landscape
+
+        from reportes.pdf import MARGEN
+
+        reporte = reporte_de_grupo()
+        base = reporte["sesiones"][0]
+        reporte["sesiones"] = [
+            dict(base, id_sesion=1000 + i, etiqueta=f"{i + 1:02d}/05") for i in range(40)
+        ]
+        for datos, anchos in self.tablas_del_reporte(reporte):
+            self.assertLessEqual(sum(anchos), landscape(A4)[0] - 2 * MARGEN + 0.01)

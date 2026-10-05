@@ -217,15 +217,20 @@ def _estilo_base_tabla():
     ]
 
 
+# PRES., FALT. y % ASIST.: con negrita de 7 pt, «PRES.» y «FALT.» necesitan
+# 12 mm con el relleno de la celda; en 7 mm se montaban sobre la columna vecina.
+ANCHOS_TOTALES = [12 * mm, 12 * mm, 16 * mm]
+ANCHO_FIJO = 10 * mm + 18 * mm + sum(ANCHOS_TOTALES)  # N°, código y totales
+
+
 def _particionar_sesiones(sesiones, ancho_disponible):
     """
     Reparte las columnas de fecha en bloques que quepan a lo ancho de la hoja.
 
     Devuelve una lista de (sesiones_del_bloque, ancho_de_cada_columna_fecha).
     """
-    ancho_fijo = 10 * mm + 18 * mm + 4 * (7 * mm) + 16 * mm  # N°, código, PTJF, %
     ancho_nombre_min = 52 * mm
-    disponible = ancho_disponible - ancho_fijo - ancho_nombre_min
+    disponible = ancho_disponible - ANCHO_FIJO - ancho_nombre_min
 
     if not sesiones:
         return [([], 8 * mm)]
@@ -280,14 +285,10 @@ def generar_pdf_reporte(reporte):
         encabezados += ["PRES.", "FALT.", "% ASIST."]
 
         anchos = [10 * mm, 18 * mm]
-        ancho_nombre = (
-            ancho_util
-            - (10 * mm + 18 * mm + 4 * (7 * mm) + 16 * mm)
-            - len(trozo) * ancho_columna
-        )
+        ancho_nombre = ancho_util - ANCHO_FIJO - len(trozo) * ancho_columna
         anchos.append(max(ancho_nombre, 40 * mm))
         anchos += [ancho_columna] * len(trozo)
-        anchos += [7 * mm] * 4 + [16 * mm]
+        anchos += ANCHOS_TOTALES
 
         datos = [encabezados]
         estilo = _estilo_base_tabla()
