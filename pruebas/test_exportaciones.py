@@ -218,7 +218,10 @@ def texto_del_pdf(contenido):
 class SinLeyendaNiVicerrectorado(SimpleTestCase):
     """Se quitaron de todos los reportes a pedido del usuario."""
 
-    QUITADOS = ("Leyenda de la matriz", "VICERRECTORADO", "Vicerrectorado")
+    QUITADOS = (
+        "Leyenda", "LEYENDA", "VICERRECTORADO", "Vicerrectorado",
+        "riesgo de inhabilitación", "Semáforo:", "El porcentaje es el de clases",
+    )
 
     def comprobar(self, texto):
         for quitado in self.QUITADOS:
@@ -250,6 +253,7 @@ class SinLeyendaNiVicerrectorado(SimpleTestCase):
         for contenido in (
             generar_excel(reporte_de_grupo()),
             generar_excel_sesion(datos_de_una_sesion()),
+            generar_excel_general([reporte_de_grupo()], "ALVAREZ ROSA"),
         ):
             libro = load_workbook(io.BytesIO(contenido))
             for hoja in libro.worksheets:

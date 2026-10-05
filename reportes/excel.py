@@ -180,21 +180,6 @@ def _hoja_resumen(libro, reporte):
         )
         hoja.auto_filter.ref = f"A{fila_titulos}:J{ultima_fila_datos}"
 
-    # Pie con los parámetros aplicados.
-    fila += 1
-    hoja.cell(
-        row=fila,
-        column=1,
-        value=(
-            f"Semáforo: verde ≥ {reporte['semaforo']['verde']}% · "
-            f"ámbar {reporte['semaforo']['ambar']}–{reporte['semaforo']['verde'] - 1}% · "
-            f"rojo < {reporte['semaforo']['ambar']}%. "
-            f"En riesgo de inhabilitación: más de {reporte['umbral_inhabilitacion']:.0f}% de faltas. "
-            "El porcentaje es el de clases a las que asistió."
-        ),
-    ).font = Font(name="Calibri", size=9, italic=True)
-    hoja.merge_cells(start_row=fila, start_column=1, end_row=fila, end_column=10)
-
     _ajustar_columnas(hoja, [6, 12, 42, 10, 12, 10, 14, 12])
     hoja.freeze_panes = hoja.cell(row=primera_fila_datos, column=4)
     return hoja
@@ -252,9 +237,9 @@ def _hoja_detalle(libro, reporte):
             f"A{fila_titulos}:{get_column_letter(len(titulos))}{fila - 1}"
         )
 
-    # Leyenda de las fechas con su tema.
+    # Las fechas con su tema, como el «Sesiones:» del PDF y del Word.
     fila += 1
-    hoja.cell(row=fila, column=1, value="LEYENDA DE SESIONES").font = FUENTE_ETIQUETA
+    hoja.cell(row=fila, column=1, value="SESIONES").font = FUENTE_ETIQUETA
     fila += 1
     for sesion in sesiones:
         hoja.cell(row=fila, column=1, value=sesion["etiqueta"]).font = FUENTE_VALOR
@@ -409,19 +394,6 @@ def _hoja_general(libro, reportes, generado_por):
         hoja.auto_filter.ref = (
             f"A{fila_titulos}:{get_column_letter(ultima_columna)}{ultima}"
         )
-
-    fila += 1
-    total_alumnos = sum(r["total_alumnos"] for r in reportes)
-    total_riesgo = sum(r["total_en_riesgo"] for r in reportes)
-    hoja.cell(
-        row=fila, column=1,
-        value=(
-            f"{len(reportes)} cursos · {total_alumnos} matrículas · "
-            f"{total_riesgo} alumnos en riesgo de inhabilitación. "
-            "Cada curso tiene su propia hoja con el detalle."
-        ),
-    ).font = Font(name="Calibri", size=9, italic=True)
-    hoja.merge_cells(start_row=fila, start_column=1, end_row=fila, end_column=ultima_columna)
 
     _ajustar_columnas(hoja, [12, 40, 14, 11, 32, 10, 9, 13, 11])
     hoja.freeze_panes = hoja.cell(row=primera, column=1)
