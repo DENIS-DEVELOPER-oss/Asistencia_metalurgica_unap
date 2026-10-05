@@ -107,10 +107,6 @@ class LienzoNumerado(canvas_modulo.Canvas):
             f"ESTUDIANTES[{self._cabecera.get('periodo', '')}]",
         )
 
-        self.setFillColor(colors.HexColor("#64748B"))
-        self.setFont("Helvetica-Bold", 7)
-        self.drawString(MARGEN, alto - 11 * mm, "VICERRECTORADO ACADÉMICO")
-
         self.setStrokeColor(DORADO)
         self.setLineWidth(1)
         self.line(MARGEN, alto - 17.5 * mm, ancho - MARGEN, alto - 17.5 * mm)
@@ -344,20 +340,10 @@ def generar_pdf_reporte(reporte):
         elementos.append(tabla)
         elementos.append(Spacer(1, 4 * mm))
 
-    leyenda = (
-        "Leyenda de la matriz por fechas: P = Presente · F = Falta. "
-        "El porcentaje es el de clases a las que asistió. "
-        f"Se marca en rojo al alumno con más de {reporte['umbral_inhabilitacion']:.0f}% "
-        f"de faltas (riesgo de inhabilitación). Alumnos en riesgo: {reporte['total_en_riesgo']} "
-        f"de {reporte['total_alumnos']}."
-    )
-    elementos.append(Paragraph(leyenda, ESTILO_NOTA))
-
     if sesiones:
         detalle_fechas = " · ".join(
             f"{s['etiqueta']}: {s['tema'] or 'Sin tema'}" for s in sesiones
         )
-        elementos.append(Spacer(1, 1.5 * mm))
         elementos.append(Paragraph(f"Sesiones: {detalle_fechas}", ESTILO_NOTA))
 
     elementos.append(_bloque_firma(cabecera["docente"]))
@@ -438,14 +424,6 @@ def generar_pdf_sesion(datos):
     tabla = Table(filas, colWidths=anchos, repeatRows=1, hAlign="LEFT")
     tabla.setStyle(TableStyle(estilo))
     elementos.append(tabla)
-
-    elementos.append(Spacer(1, 2 * mm))
-    elementos.append(
-        Paragraph(
-            "Leyenda de la matriz por fechas: P = Presente · F = Falta.",
-            ESTILO_NOTA,
-        )
-    )
     elementos.append(_bloque_firma(cabecera["docente"]))
 
     documento.build(elementos, canvasmaker=_fabrica_de_lienzo(cabecera))

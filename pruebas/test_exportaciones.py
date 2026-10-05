@@ -194,3 +194,63 @@ class PdfDeUnaClase(SimpleTestCase):
         contenido = generar_pdf_sesion(datos_de_una_sesion())
         self.assertTrue(contenido.startswith(b"%PDF-"))
         self.assertIn(b"%%EOF", contenido[-1024:])
+
+
+def texto_del_pdf(contenido):
+    """Texto de las páginas: ReportLab las guarda en ASCII85 y comprimidas."""
+    import base64
+    import re
+    import zlib
+
+    partes = []
+    # ReportLab no deja salto de línea antes de `endstream`.
+    for flujo in re.findall(rb"stream\r?\n(.*?)endstream", contenido, re.S):
+        try:
+            partes.append(zlib.decompress(base64.a85decode(flujo.strip(), adobe=True)))
+        except Exception:  # noqa: BLE001 - imágenes y fuentes no son texto
+            try:
+                partes.append(zlib.decompress(flujo))
+            except zlib.error:
+                pass
+    return b"".join(partes).decode("latin-1")
+
+
+class SinLeyendaNiVicerrectorado(SimpleTestCase):
+    """Se quitaron de todos los reportes a pedido del usuario."""
+
+    QUITADOS = ("Leyenda de la matriz", "VICERRECTORADO", "Vicerrectorado")
+
+    def comprobar(self, texto):
+        for quitado in self.QUITADOS:
+            self.assertFalse(quitado in texto, f"sigue apareciendo «{quitado}»")
+
+    def test_pdf(self):
+        for contenido in (
+            generar_pdf_reporte(reporte_de_grupo()),
+            generar_pdf_sesion(datos_de_una_sesion()),
+        ):
+            texto = texto_del_pdf(contenido)
+            # Que el texto se lea de verdad: si no, la prueba pasaría siempre.
+            self.assertIn("REPORTE DE ASISTENCIA", texto)
+            self.comprobar(texto)
+
+    def test_word(self):
+        for contenido in (
+            generar_word(reporte_de_grupo()),
+            generar_word_sesion(datos_de_una_sesion()),
+        ):
+            # El cuerpo y también el pie de página, donde iba el Vicerrectorado.
+            with zipfile.ZipFile(io.BytesIO(contenido)) as z:
+                partes = [z.read(n).decode("utf-8") for n in z.namelist() if n.startswith("word/")
+                          and n.endswith(".xml")]
+            self.assertTrue(any("footer" in n for n in z.namelist()))
+            self.comprobar(" ".join(partes))
+
+    def test_excel(self):
+        for contenido in (
+            generar_excel(reporte_de_grupo()),
+            generar_excel_sesion(datos_de_una_sesion()),
+        ):
+            libro = load_workbook(io.BytesIO(contenido))
+            for hoja in libro.worksheets:
+                self.comprobar(" ".join(celdas_de_la_hoja(hoja)))

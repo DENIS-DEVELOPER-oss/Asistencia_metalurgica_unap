@@ -81,7 +81,7 @@ def _pie_de_pagina(seccion, cabecera):
     parrafo.alignment = WD_ALIGN_PARAGRAPH.CENTER
     corrida = parrafo.add_run(
         f"{cabecera['codigo_curso']} · {cabecera['grupo']} · "
-        f"{cabecera['periodo']} — Vicerrectorado Académico"
+        f"{cabecera['periodo']}"
     )
     corrida.font.size = Pt(7)
     corrida.font.color.rgb = GRIS
@@ -202,15 +202,6 @@ def generar_word(reporte):
             _sombrear(celdas[columna], "FEE2E2")
 
     documento.add_paragraph().paragraph_format.space_after = Pt(2)
-    _parrafo(
-        documento,
-        "Leyenda de la matriz por fechas: P = Presente · F = Falta. "
-        "El porcentaje es el de clases a las que asistió. "
-        f"Se marca en rojo al alumno con más de {reporte['umbral_inhabilitacion']:.0f}% "
-        f"de faltas (riesgo de inhabilitación). "
-        f"Alumnos en riesgo: {reporte['total_en_riesgo']} de {reporte['total_alumnos']}.",
-        tamano=7, color=GRIS,
-    )
     if sesiones:
         detalle = " · ".join(
             f"{s['etiqueta']}: {s['tema'] or 'Sin tema'}" for s in sesiones
@@ -287,12 +278,6 @@ def generar_word_sesion(datos):
         for celda, ancho in zip(celdas, anchos, strict=True):
             celda.width = ancho
 
-    documento.add_paragraph().paragraph_format.space_after = Pt(2)
-    _parrafo(
-        documento,
-        "Leyenda de la matriz por fechas: P = Presente · F = Falta.",
-        tamano=7, color=GRIS,
-    )
     _bloque_firma(documento, cabecera["docente"])
 
     buffer = BytesIO()

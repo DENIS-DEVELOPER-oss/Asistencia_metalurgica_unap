@@ -551,12 +551,6 @@ def generar_excel_sesion(datos):
         hoja.auto_filter.ref = f"A{fila_titulos}:E{fila - 1}"
         hoja.freeze_panes = hoja.cell(row=primera, column=1)
 
-    fila += 1
-    hoja.cell(
-        row=fila, column=1,
-        value="Leyenda de la matriz por fechas: P = Presente · F = Falta.",
-    ).font = Font(name="Calibri", size=9, italic=True)
-
     _ajustar_columnas(hoja, [6, 13, 42, 14, 46])
 
     buffer = BytesIO()
